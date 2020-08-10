@@ -66,7 +66,7 @@ vmapPlaceholder p = emptyVMap { vmapNodes = Left (Proxy p) }
 vmapDropArgs :: Ord n => VMap p n -> VMap p n
 vmapDropArgs vm = vm { vmapArgs = mempty }
 
-vmapHeads :: Monad m => VMap p n -> m [n]
+vmapHeads :: MonadFail m => VMap p n -> m [n]
 vmapHeads VMap { vmapNodes = Left _ } = fail "vmapHeads: VMap is unknown"
 vmapHeads VMap { vmapNodes = Right set } = return $ Set.toList set
 
@@ -109,6 +109,8 @@ instance (Show p,Show n,Ord p,Ord n) => Fixable (VMap p n) where
     lte x@VMap { vmapArgs = as, vmapNodes = Right ns } y@VMap { vmapArgs = as', vmapNodes = Right ns'} =  (Set.null (ns Set.\\ ns') && (Map.null $ Map.differenceWith (\a b -> if a `lte` b then Nothing else Just undefined) as as'))
     showFixable x = show x
 
+instance (Show p,Show n,Ord p,Ord n) => Semigroup (VMap p n) where
+    (<>) = lub
+
 instance (Show p,Show n,Ord p,Ord n) => Monoid (VMap p n) where
     mempty = bottom
-    mappend = lub

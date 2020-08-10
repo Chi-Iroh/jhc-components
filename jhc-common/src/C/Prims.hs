@@ -33,7 +33,7 @@ instance Show Requires where
     show (Requires s) = show (Set.toList s)
 
 newtype Requires = Requires (Set.Set (CallConv,PackedString))
-    deriving(Eq,Ord,Monoid,Binary)
+    deriving(Eq,Ord,Semigroup,Monoid,Binary)
 
 data DotNetPrim = DotNetField | DotNetCtor | DotNetMethod
     deriving(Typeable, Eq, Ord, Show)
@@ -169,7 +169,7 @@ instance DocLike d => PPrint d Op.Ty where
 instance (DocLike d,Show v) => PPrint d (Op.Op v) where
     pprintAssoc _ n p = text (showsPrec n p "")
 
-parseDotNetFFI :: Monad m => String -> m Prim
+parseDotNetFFI :: MonadFail m => String -> m Prim
 parseDotNetFFI s = ans where
     init = PrimDotNet { primIOLike = False, primStatic = False, primDotNet = DotNetField, primAssembly = packString "", primDotNetName = packString "" }
     ans = case words s of

@@ -151,7 +151,9 @@ data Ho = Ho {
 
 instance Monoid Ho where
     mempty = Ho (error "unknown module group") mempty mempty
-    mappend ha hb = Ho (hoModuleGroup ha) (hoTcInfo ha `mappend` hoTcInfo hb) (hoBuild ha `mappend` hoBuild hb)
+
+instance Semigroup Ho where
+    ha <> hb = Ho (hoModuleGroup ha) (hoTcInfo ha `mappend` hoTcInfo hb) (hoBuild ha `mappend` hoBuild hb)
 
 data ExtraFile = ExtraFile {
     extraFileName :: PackedString,
@@ -222,7 +224,9 @@ hoTypeSynonyms_s v =  hoTypeSynonyms_u  (const v)
 
 instance Monoid HoTcInfo where
     mempty = HoTcInfo mempty mempty mempty mempty mempty mempty mempty mempty
-    mappend (HoTcInfo aa ab ac ad ae af ag ah) (HoTcInfo aa' ab' ac' ad' ae' af' ag' ah') = HoTcInfo (mappend aa aa')(mappend ab ab')(mappend ac ac')(mappend ad ad')(mappend ae ae')(mappend af af')(mappend ag ag')(mappend ah ah')
+
+instance Semigroup HoTcInfo where
+    (HoTcInfo aa ab ac ad ae af ag ah) <> (HoTcInfo aa' ab' ac' ad' ae' af' ag' ah') = HoTcInfo (mappend aa aa')(mappend ab ab')(mappend ac ac')(mappend ad ad')(mappend ae ae')(mappend af af')(mappend ag ag')(mappend ah ah')
 
 hoDataTable_u f r@HoBuild{hoDataTable  = x} = r{hoDataTable = f x}
 hoEs_u f r@HoBuild{hoEs  = x} = r{hoEs = f x}
@@ -233,7 +237,9 @@ hoRules_s v =  hoRules_u  (const v)
 
 instance Monoid HoBuild where
     mempty = HoBuild mempty mempty mempty
-    mappend (HoBuild aa ab ac) (HoBuild aa' ab' ac') = HoBuild (mappend aa aa')(mappend ab ab')(mappend ac ac')
+
+instance Semigroup HoBuild where
+    (HoBuild aa ab ac) <> (HoBuild aa' ab' ac') = HoBuild (mappend aa aa')(mappend ab ab')(mappend ac ac')
 
 hoBuild_u f r@Ho{hoBuild  = x} = r{hoBuild = f x}
 hoModuleGroup_u f r@Ho{hoModuleGroup  = x} = r{hoModuleGroup = f x}

@@ -37,6 +37,7 @@ module Name.Id(
 
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Applicative
 import Data.Bits
 import Data.Int
 import Data.Monoid
@@ -170,7 +171,7 @@ idMapToIdSet (IntjectionMap im)  = IntjectionSet $ IM.keysSet im
 
 -- | Name monad transformer.
 newtype IdNameT m a = IdNameT (StateT (IdSet, IdSet) m a)
-    deriving(Monad, MonadTrans, Functor, MonadFix, MonadPlus, MonadIO)
+    deriving(Monad, MonadTrans, Functor, MonadFix, MonadPlus, MonadIO, Applicative, Alternative)
 
 instance (MonadReader r m) => MonadReader r (IdNameT m) where
         ask       = lift ask
@@ -283,7 +284,7 @@ toId x = Id $ fromAtom (toAtom x)
 instance FromAtom Id where
     fromAtom x = Id $ fromAtom x
 
-fromId :: Monad m => Id -> m Name
+fromId :: MonadFail m => Id -> m Name
 fromId (Id i) = case intToAtom i of
     Just a -> return $ fromAtom a
     Nothing -> fail $ "Name.fromId: not a name " ++ show (Id i)

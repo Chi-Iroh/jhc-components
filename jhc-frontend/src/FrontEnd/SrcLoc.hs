@@ -42,7 +42,9 @@ bogusSrcSpan = SrcSpan bogusASrcLoc bogusASrcLoc
 
 instance Monoid SrcLoc where
     mempty = bogusASrcLoc
-    mappend a b
+
+instance Semigroup SrcLoc where
+    (<>) a b
         | a == bogusASrcLoc = b
         | otherwise = a
 
@@ -143,7 +145,7 @@ instance Show SrcSpan where
             slf = unpackPS . srcLocFileName
 
 newtype SLM m a = SLM (ReaderT SrcSpan m a)
-    deriving(Monad,MonadReader SrcSpan,Applicative,Functor)
+    deriving(Monad,MonadReader SrcSpan,Applicative,Functor,MonadFail)
 
 runSLM :: SLM m a -> m a
 runSLM (SLM t) = runReaderT t bogusSrcSpan

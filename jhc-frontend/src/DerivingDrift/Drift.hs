@@ -21,7 +21,7 @@ driftDerive hsModule@HsModule { hsModuleOpt, hsModuleName } = do
             Just hs -> return $ hsModuleDecls hs
             Nothing -> return $ []
 
-driftDerive' :: Monad m => HsDecl -> m String
+driftDerive' :: MonadFail m => HsDecl -> m String
 driftDerive' HsDataDecl { hsDeclName = name, hsDeclArgs = args, hsDeclCons = condecls, hsDeclDerives = derives } = do
         let d = unrenameTyVars $ toData  name args condecls derives
             isEnum = length condecls > 1 && null (concatMap hsConDeclArgs condecls)

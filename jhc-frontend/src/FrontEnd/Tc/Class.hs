@@ -50,7 +50,7 @@ freeMetaVarsPred (IsIn _ t) = freeMetaVars t
 freeMetaVarsPred (IsEq t1 t2) = freeMetaVars t1 `Set.union` freeMetaVars t2
 
 -- | split predicates into ones that only mention metavars in the list vs other ones
-splitPreds :: Monad m
+splitPreds :: MonadFail m
            => ClassHierarchy
            -> Set.Set MetaVar
            -> Preds
@@ -59,10 +59,10 @@ splitPreds h fs ps  = do
     ps' <- toHnfs h ps
     return $ partition (\p -> let fv = freeMetaVarsPred p in not (Set.null fv) && fv `Set.isSubsetOf` fs) $ simplify h ps'
 
-toHnfs      :: Monad m => ClassHierarchy -> [Pred] -> m [Pred]
+toHnfs      :: MonadFail m => ClassHierarchy -> [Pred] -> m [Pred]
 toHnfs h ps =  mapM (toHnf h) ps >>= return . concat
 
-toHnf :: Monad m => ClassHierarchy -> Pred -> m [Pred]
+toHnf :: MonadFail m => ClassHierarchy -> Pred -> m [Pred]
 toHnf h p
     | inHnf p = return [p]
     | otherwise =  case reducePred h p of
@@ -81,7 +81,7 @@ inHnf (IsIn c t) = hnf t
        hnf TExists {} = False
        hnf TAssoc {} = True
 
-reducePred :: Monad m => ClassHierarchy -> Pred -> m [Pred]
+reducePred :: MonadFail m => ClassHierarchy -> Pred -> m [Pred]
 reducePred h p@(IsEq t1 t2) = fail "reducePred" -- return [p]
 reducePred h p@(IsIn c t)
     | Just x <- foldr mplus Nothing poss = return x
@@ -109,12 +109,12 @@ bySuper h p@(IsIn c t)
  = p : concatMap (bySuper h) supers
    where supers = [ IsIn c' t | c' <- supersOf h c ]
 
-byInst             :: Monad m => Pred -> Inst -> m [Pred]
+byInst             :: MonadFail m => Pred -> Inst -> m [Pred]
 byInst p Inst { instHead = ps :=> h } = do
     u <- matchPred h p
     return (map (inst mempty (Map.fromList [ (tyvarName mv,t) | (mv,t) <- u ])) ps)
 
-matchPred :: Monad m => Pred -> Pred -> m [(Tyvar,Type)]
+matchPred :: MonadFail m => Pred -> Pred -> m [(Tyvar,Type)]
 matchPred x@(IsIn c t) y@(IsIn c' t')
       | c == c'   = match t t'
 matchPred x y = fail $ "Classes do not match: " ++ show (x,y)
@@ -125,7 +125,7 @@ instsOf :: ClassHierarchy -> Class -> [Inst]
 --instsOf ch c = asksClassRecord ch c classInsts
 instsOf ch c = findClassInsts ch c
 
-match :: Monad m => Type -> Type -> m [(Tyvar,Type)]
+match :: MonadFail m => Type -> Type -> m [(Tyvar,Type)]
 match x y = do match' x y
 match' (TAp l r) (TAp l' r') = do
     sl <- match l l'

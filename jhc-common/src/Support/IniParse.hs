@@ -13,7 +13,10 @@ import qualified Data.Sequence as Seq
 type St = (Int,FilePath,String)
 
 newtype P a = P (State St a)
-    deriving(Monad,MonadState St)
+    deriving(Monad,MonadState St, Applicative, Functor)
+
+instance MonadFail P where
+  fail = error
 
 third (_,_,x) = x
 

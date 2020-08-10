@@ -103,7 +103,7 @@ combineArgs :: a -> [b] -> [((a, Int), b)]
 combineArgs fn as = [ ((fn,n),a) | (n,a) <- zip [0 :: Int ..] as]
 
 go :: (MonadIO m, Collection b, Collection a, Fixable b, Fixable a,
-       Elem b ~ Atom, Elem a ~ Atom) =>
+       Elem b ~ Atom, Elem a ~ Atom, MonadFail m) =>
       Fixer
       -> Value a
       -> Value b
@@ -176,7 +176,7 @@ go fixer pappFuncs suspFuncs usedFuncs usedArgs usedCafs postInline (fn,as :-> b
         (nl,_) <- whiz (\_ -> id) h' f whizState (as :-> body)
         return nl
 
-removeDeadArgs :: MonadStats m => Bool -> Set.Set Atom -> Set.Set Atom -> (Set.Set Var) -> (Set.Set (Atom,Int)) -> (Atom,Lam) -> WhizState -> m (WhizState,(Atom,Lam))
+removeDeadArgs :: (MonadStats m,MonadFail m) => Bool -> Set.Set Atom -> Set.Set Atom -> (Set.Set Var) -> (Set.Set (Atom,Int)) -> (Atom,Lam) -> WhizState -> m (WhizState,(Atom,Lam))
 removeDeadArgs postInline funSet directFuncs usedCafs usedArgs (a,l) whizState =  whizExps f (margs a l) >>= \(l,ws) -> return (ws,(a,l)) where
     whizExps f l = whiz (\_ x -> x) (\(p,e) -> f e >>= \e' -> return  (Just (p,e'))) f whizState l
     margs fn (as :-> e) | a `Set.member` directFuncs = ((removeArgs fn as) :-> e)

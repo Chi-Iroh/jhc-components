@@ -249,7 +249,7 @@ qualTypeToClassHead qt = do
         (HsTyCon className,as) -> return HsClassHead { hsClassHeadContext = hsQualTypeContext qt, hsClassHead = toName ClassName className, hsClassHeadArgs = as }
         _ -> fail "Invalid Class Head"
 
-doForeign :: Monad m => SrcLoc -> [Name] -> Maybe (String,Name) -> HsQualType -> m HsDecl
+doForeign :: MonadFail m => SrcLoc -> [Name] -> Maybe (String,Name) -> HsQualType -> m HsDecl
 doForeign srcLoc names ms qt = ans where
     ans = do
         (mstring,vname@(nameParts -> (_,Nothing,cname)),names') <- case ms of
@@ -287,7 +287,7 @@ doForeign srcLoc names ms qt = ans where
 --       []              -> return (show hn)
 --       _               -> fail ("Invalid cname in export declaration: "++show cn)
 
-parseImport :: Monad m => CallConv -> Maybe String -> Name -> m FfiType
+parseImport :: MonadFail m => CallConv -> Maybe String -> Name -> m FfiType
 parseImport _ Nothing hn = return $ Import (show hn) mempty
 parseImport cc (Just cn) hn =
     case words cn of

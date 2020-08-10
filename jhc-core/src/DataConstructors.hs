@@ -47,7 +47,7 @@ module DataConstructors(
 import Control.Monad.Identity
 import Control.Monad.Writer(tell,execWriter)
 import Data.Maybe
-import Data.Monoid hiding(getProduct)
+import Data.Monoid hiding(getProduct, Alt)
 import List(sortBy)
 import qualified Data.Map as Map hiding(map)
 import qualified Data.Set as Set hiding(map)
@@ -175,7 +175,7 @@ getHsSlots ss = map f ss where
     f (SlotExistential e) = tvrType e
 
 newtype DataTable = DataTable (Map.Map Name Constructor)
-    deriving(Monoid)
+    deriving(Monoid, Semigroup)
 
 instance Binary DataTable where
     put (DataTable dt) = putMap dt
@@ -196,7 +196,7 @@ instance HasSize DataTable where
     size (DataTable d) = Map.size d
 
 {-# NOINLINE getConstructor #-}
-getConstructor :: Monad m => Name -> DataTable -> m Constructor
+getConstructor :: MonadFail m => Name -> DataTable -> m Constructor
 getConstructor n _ | isJust me = return (emptyConstructor {
     conName = n, conType = e,
     conExpr = foldr ELam (foldl eAp (mktBox e) (map EVar tvrs)) tvrs,
@@ -214,7 +214,7 @@ getConstructor n (DataTable map) = case Map.lookup n map of
     Nothing -> fail $ "getConstructor: " ++ show (nameType n,n)
 
 -- | return the single constructor of product types
-getProduct :: Monad m => DataTable -> E -> m Constructor
+getProduct :: MonadFail m => DataTable -> E -> m Constructor
 getProduct dataTable e | (ELit LitCons { litName = cn }) <-
     followAliases dataTable e, Just c <- getConstructor cn dataTable = f c where
         f c | DataNormal [x] <- conChildren c = getConstructor x dataTable
@@ -305,7 +305,7 @@ sortConstructor name ss = emptyConstructor {
     conInhabits = sortName ss
 }
 
-typesCompatable :: forall m . Monad m => E -> E -> m ()
+typesCompatable :: forall m . MonadFail m => E -> E -> m ()
 typesCompatable a b = f etherealIds a b where
         f :: [Id] -> E -> E -> m ()
         f _ (ESort a) (ESort b) = when (a /= b) $ fail $ "Sorts don't match: " ++ pprint (ESort a,ESort b)
@@ -340,7 +340,7 @@ typesCompatable a b = f etherealIds a b where
         boxCompat (ELit (LitCons { litName = n }))  t | Just e <- fromConjured modBox n =  e == getType t
         boxCompat _ _ = False
 
-extractPrimitive :: Monad m => DataTable -> E -> m (E,(ExtType,E))
+extractPrimitive :: MonadFail m => DataTable -> E -> m (E,(ExtType,E))
 extractPrimitive dataTable e = case followAliases dataTable (getType e) of
     st@(ELit LitCons { litName = c, litArgs = [], litType = t })
         | t == eHash -> return (e,(ExtType (packString $show c),st))
@@ -355,7 +355,7 @@ extractPrimitive dataTable e = case followAliases dataTable (getType e) of
     e' -> fail $ "extractPrimitive: " ++ show (e,e')
 
 boxPrimitive ::
-    Monad m
+    MonadFail m
     => DataTable
     -> E         -- primitive to box
     -> E         -- what type we want it to have
@@ -375,7 +375,7 @@ boxPrimitive dataTable e et = case followAliases dataTable et of
                 return $ (eStrictLet tvra e $ ELit litCons { litName = cn, litArgs = [EVar tvra], litType = et },(ExtType . packString $ show n,st))
     e' -> fail $ "boxPrimitive: " ++ show (e,e')
 
-extractIO :: Monad m => E -> m E
+extractIO :: MonadFail m => E -> m E
 extractIO e = f e where
     f (ELit LitCons { litName = c, litArgs = [x] }) | c == tc_IO  = return x
     f (ELit LitCons { litAliasFor = Just af, litArgs = as }) = f (foldl eAp af as)
@@ -402,9 +402,9 @@ extTypeInfoExtType (ExtTypeRaw et) = et
 extTypeInfoExtType (ExtTypeBoxed _ _ et) = et
 extTypeInfoExtType ExtTypeVoid = "void"
 
-lookupExtTypeInfo :: Monad m => DataTable -> E -> m ExtTypeInfo
+lookupExtTypeInfo :: MonadFail m => DataTable -> E -> m ExtTypeInfo
 lookupExtTypeInfo dataTable oe = f Set.empty oe where
-    f :: Monad m => Set.Set Name -> E -> m ExtTypeInfo
+    f :: MonadFail m => Set.Set Name -> E -> m ExtTypeInfo
     -- handle the void context ones first
     f _ e@(ELit LitCons { litName = c }) | c == tc_Unit || c == tc_State_ = return ExtTypeVoid
     -- if the constructor is in the external type map, replace its external
@@ -438,11 +438,11 @@ lookupExtTypeInfo dataTable oe = f Set.empty oe where
         n `Set.notMember` seen = f (Set.insert n seen) e'
     g _ e = fail $ "lookupExtTypeInfo: " ++ show (oe,e)
 
-expandAlias :: Monad m => E -> m E
+expandAlias :: MonadFail m => E -> m E
 expandAlias (ELit LitCons { litAliasFor = Just af, litArgs = as }) = return (foldl eAp af as)
 expandAlias  _ = fail "expandAlias: not alias"
 
-followAlias :: Monad m => DataTable -> E -> m E
+followAlias :: MonadFail m => DataTable -> E -> m E
 followAlias _ (ELit LitCons { litAliasFor = Just af, litArgs = as }) = return (foldl eAp af as)
 followAlias _  _ = fail "followAlias: not alias"
 
@@ -852,7 +852,7 @@ onlyChild dt n = isJust ans where
                     DataNormal [_] -> return ()
                     _ -> fail "not cpr"
 
-pprintTypeOfCons :: (Monad m,DocLike a) => DataTable -> Name -> m a
+pprintTypeOfCons :: (MonadFail m,DocLike a) => DataTable -> Name -> m a
 pprintTypeOfCons dataTable name = do
     c <- getConstructor name dataTable
     return $ pprintTypeAsHs (conType c)
@@ -879,7 +879,7 @@ pprintTypeAsHs e = unparse $ runVarName (f e) where
         r <- f e
         return $ fixitize (N,-3) $ pop (text "forall" <+> hsep (map char ts') <+> text ". ")  (atomize r)
     f e = error $ "printTypeAsHs: " ++ show e
-    arr = bop (R,0) (space D.<> text "->" D.<> space)
+    arr = bop (R,0) (space <> text "->" <> space)
     app = bop (L,100) (text " ")
 
 class Monad m => DataTableMonad m where

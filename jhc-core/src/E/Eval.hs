@@ -12,6 +12,7 @@ import Doc.PPrint
 import E.E
 import E.Subst
 import Name.Id
+import Prelude hiding ((<$>))
 import {-# SOURCE #-} E.Show
 
 trace _ x = x
@@ -49,14 +50,14 @@ eval term = eval' term []  where
     -- currently we do not do eta check. etas should only appear for good reason.
     check_eta x = x
 
-strong :: Monad m => [(TVr,E)] -> E -> m E
+strong :: MonadFail m => [(TVr,E)] -> E -> m E
 strong dsMap' term = trace ("strong: " ++ show term) $ eval' dsMap term [] where
     dsMap = Map.fromList dsMap'
     etvr ds tvr = do
         t' <- (eval' ds (tvrType tvr) [])
         return $ tvr { tvrType = t' }
 
-    eval' :: Monad m => Map.Map TVr E -> E -> [E] -> m E
+    eval' :: MonadFail m => Map.Map TVr E -> E -> [E] -> m E
     eval' ds (ELam v body) [] = do
         let ds' = Map.delete v ds
         v' <- etvr ds' v

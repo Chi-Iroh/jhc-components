@@ -48,7 +48,7 @@ class Fixable a where
 -- variables 'v' to within specific values of 'l'
 
 newtype C l v = C (S.Seq (CL l v))
-    deriving(Monoid)
+    deriving(Monoid,Semigroup)
 
 data Op = OpLte | OpEq | OpGte
 

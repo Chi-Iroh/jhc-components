@@ -119,15 +119,15 @@ isRho r = isRho' r && not (isBoxy r)
 isBoxyMetaVar :: MetaVar -> Bool
 isBoxyMetaVar MetaVar { metaType = t } = t > Tau
 
-extractTyVar ::  Monad m => Type -> m Tyvar
+extractTyVar ::  MonadFail m => Type -> m Tyvar
 extractTyVar (TVar tv) = return tv
 extractTyVar t = fail $ "not a Var:" ++ show t
 
-extractMetaVar :: Monad m => Type -> m MetaVar
+extractMetaVar :: MonadFail m => Type -> m MetaVar
 extractMetaVar (TMetaVar t)  = return t
 extractMetaVar t = fail $ "not a metaTyVar:" ++ show t
 
-extractBox :: Monad m => Type -> m MetaVar
+extractBox :: MonadFail m => Type -> m MetaVar
 extractBox (TMetaVar mv) | metaType mv > Tau  = return mv
 extractBox t = fail $ "not a metaTyVar:" ++ show t
 
@@ -247,10 +247,10 @@ instance FreeVars Type [MetaVar] where
 instance FreeVars Type (S.Set MetaVar) where
     freeVars t = freeMetaVars t
 
-instance (FreeVars t b,FreeVars Pred b) => FreeVars (Qual t) b where
+instance (FreeVars t b,FreeVars Pred b, Monoid b) => FreeVars (Qual t) b where
     freeVars (ps :=> t)  = freeVars t `mappend` freeVars ps
 
-instance FreeVars Type b =>  FreeVars Pred b where
+instance (FreeVars Type b, Monoid b) =>  FreeVars Pred b where
     freeVars (IsIn _c t)  = freeVars t
     freeVars (IsEq t1 t2)  = freeVars (t1,t2)
 
@@ -297,7 +297,9 @@ ptrans b f = if b then f else id
 
 instance Monoid CoerceTerm where
     mempty = CTId
-    mappend = composeCoerce
+
+instance Semigroup CoerceTerm where
+    (<>) = composeCoerce
 
 ctFun :: CoerceTerm -> CoerceTerm
 ctFun CTId = CTId

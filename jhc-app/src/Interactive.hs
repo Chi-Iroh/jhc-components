@@ -69,7 +69,7 @@ isInitial = IS {
     }
 
 newtype In a = MkIn (ReaderT InteractiveState IO a)
-    deriving(MonadIO,Monad,Functor,MonadReader InteractiveState, Applicative)
+    deriving(MonadIO,Monad,Functor,MonadReader InteractiveState, Applicative,MonadFail)
 
 runIn :: InteractiveState -> In a -> IO a
 runIn is (MkIn x) = runReaderT x is
@@ -149,7 +149,7 @@ kindShow (KBase b) = pprint b
 kindShow x = parens (pprint x)
 
 parseStmt s  = fail "no parser"
-parseStmt ::  Monad m => String -> m HsStmt
+parseStmt ::  MonadFail m => String -> m HsStmt
 --parseStmt s = case snd $ runParserWithMode (parseModeOptions options) { parseFilename = "(jhci)" } parseHsStmt  s  of
 --                      ParseOk e -> return e
 --                      ParseFailed sl err -> fail $ show sl ++ ": " ++ err
@@ -227,7 +227,7 @@ tcStatementTc (HsQualifier e) = do
     ce <- getCollectedEnv
     liftIO $ mapM_ putStrLn [ pprint n <+>  "::" <+> prettyPrintType s |  (n,s) <- Map.toList ce]
 
-calcImports :: Monad m => HoTcInfo -> Bool -> Module -> m [(Name,[Name])]
+calcImports :: MonadFail m => HoTcInfo -> Bool -> Module -> m [(Name,[Name])]
 calcImports ho qual mod = case Map.lookup mod (hoExports ho) of
     Nothing -> fail $ "calcImports: module not known " ++ show mod
     Just es -> do

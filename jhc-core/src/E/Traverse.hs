@@ -11,7 +11,7 @@ module E.Traverse(
     ) where
 
 import Control.Monad.Reader
-import Control.Monad.Writer.Strict
+import Control.Monad.Writer.Strict hiding (Alt)
 import Data.Maybe
 import qualified Data.Traversable as T
 
@@ -28,7 +28,9 @@ newtype MInt = MInt Int
 
 instance Monoid MInt where
     mempty = MInt 0
-    mappend (MInt a) (MInt b) = a `seq` b `seq` MInt (a + b)
+
+instance Semigroup MInt where
+    (<>) (MInt a) (MInt b) = a `seq` b `seq` MInt (a + b)
 
 runRename :: IdSet -> E -> (E,IdSet)
 runRename set e = renameE set mempty e
@@ -159,7 +161,7 @@ renameE initSet initMap e = runReader (runIdNameT $ addBoundNamesIdMap initMap >
         e' <- localSubst n (f e)
         return $ elam tv' e'
 
-scopeCheck :: Monad m => Bool -> IdMap TVr -> E -> m ()
+scopeCheck :: MonadFail m => Bool -> IdMap TVr -> E -> m ()
 scopeCheck checkFvs initMap e = runReaderT (f e) initMap  where
     f (ELam tvr e) = f (tvrType tvr) >> local (minsert (tvrIdent tvr) tvr) (f e)
     f (EPi tvr e) = f (tvrType tvr) >> local (minsert (tvrIdent tvr) tvr) (f e)

@@ -71,7 +71,7 @@ encloseSep left right sep ds
 errorDoc :: Doc -> a
 errorDoc = error . ('\n':) . show
 
-failDoc :: Monad m => Doc -> m a
+failDoc :: MonadFail m => Doc -> m a
 failDoc = fail . ('\n':) . show
 
 -----------------------------------------------------------
@@ -100,8 +100,10 @@ instance TextLike Doc where
     text = mytext
     char x = mychar x
 
-instance DocLike Doc where
+instance Semigroup Doc where
     x <> y = x `beside` y
+
+instance DocLike Doc where
     x <+> y = x <> space <> y
     encloseSep = Doc.Pretty.encloseSep
     vcat = Doc.Pretty.vcat

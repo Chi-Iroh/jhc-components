@@ -3,12 +3,14 @@
 module FrontEnd.Lex.Lexer (scanner,Lexeme(..),LexemeClass(..),AlexPosn(..)) where
 
 import Control.Monad
+import Control.Applicative
 import Data.Word (Word8)
 import FrontEnd.SrcLoc
 import Name.Name
 import Options
 import qualified Data.Bits
 import qualified FlagOpts as FO
+import Data.Char
 }
 
 -- %wrapper "monadUserState"
@@ -376,6 +378,13 @@ instance Monad Alex where
                                 Left msg -> Left msg
                                 Right (s',a) -> unAlex (k a) s'
   return a = Alex $ \s -> Right (s,a)
+
+instance Functor Alex where
+  fmap = liftM
+
+instance Applicative Alex where
+  (<*>) = ap
+  pure = return
 
 alexGetInput :: Alex AlexInput
 alexGetInput

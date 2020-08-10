@@ -311,7 +311,7 @@ getColumns = read $ unsafePerformIO (getEnv "COLUMNS" `mplus` return "80")
 postProcessFD :: Monad m => Opt -> m Opt
 postProcessFD o = case FlagDump.process (optDumpSet o) (optDump o ++ vv) of
         (s,[]) -> return $ o { optDumpSet = s, optDump = [] }
-        (_,xs) -> fail ("Unrecognized dump flag passed to '-d': "
+        (_,xs) -> error ("Unrecognized dump flag passed to '-d': "
                         ++ unwords xs ++ "\nValid dump flags:\n\n" ++ FlagDump.helpMsg)
     where
     vv | optVerbose o >= 2 = ["veryverbose"]
@@ -321,7 +321,7 @@ postProcessFD o = case FlagDump.process (optDumpSet o) (optDump o ++ vv) of
 postProcessFO :: Monad m => Opt -> m Opt
 postProcessFO o = case FlagOpts.process (optFOptsSet o) (optFOpts o) of
         (s,[]) -> return $ o { optFOptsSet = s, optFOpts = [] }
-        (_,xs) -> fail ("Unrecognized flag passed to '-f': "
+        (_,xs) -> error ("Unrecognized flag passed to '-f': "
                         ++ unwords xs ++ "\nValid flags:\n\n" ++ FlagOpts.helpMsg)
 
 getArguments = do
@@ -424,7 +424,7 @@ configs = toNode [
     a ==> b = (a,toNode b)
 
 {-# NOINLINE fileOptions #-}
-fileOptions :: Monad m => Opt -> [String] -> m Opt
+fileOptions :: MonadFail m => Opt -> [String] -> m Opt
 fileOptions options xs = case getOpt Permute theoptions xs of
     (os,[],[]) -> postProcessFD (foldl (flip ($)) options os) >>= postProcessFO
     (_,_,errs) -> fail (concat errs)
@@ -507,7 +507,7 @@ instance OptionMonad Identity
 instance OptionMonad IO
 
 newtype OptT m a = OptT (ReaderT Opt m a)
-    deriving(MonadIO,Monad,Functor,MonadTrans)
+    deriving(MonadIO,Monad,Functor,MonadTrans,Applicative)
 
 type OptM = OptT Identity
 

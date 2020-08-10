@@ -19,7 +19,7 @@ type FixityInfo = (Int, HsAssoc)
 type SymbolMap = Map.Map Name FixityInfo
 
 newtype FixityMap = FixityMap SymbolMap
-    deriving(Monoid,HasSize)
+    deriving(Semigroup,Monoid,HasSize)
 
 instance Binary FixityMap where
     put (FixityMap ts) = putMap ts

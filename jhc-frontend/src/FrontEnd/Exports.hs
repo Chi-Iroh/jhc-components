@@ -99,7 +99,7 @@ determineExports' owns doneMods todoMods = mdo
         f (_,[]) = error "can't happen"
         f (x,ys) = warn bogusASrcLoc (AmbiguousExport (modInfoName m) ys) ("module " <> show (modInfoName m) <> " has ambiguous exports: " ++ show ys) >> return (head ys)
 
-    getExports :: Monad m => ModInfo -> (Module -> m (Rel Name Name)) -> m (Rel Name Name)
+    getExports :: MonadFail m => ModInfo -> (Module -> m (Rel Name Name)) -> m (Rel Name Name)
     getExports mi@ModInfo { modInfoHsModule = m@HsModule { hsModuleExports = Nothing } } _ = return $ defsToRel (modInfoDefs mi)
     getExports mi le | HsModule { hsModuleExports = Just es } <- modInfoHsModule mi = do
         is <- getImports mi le
@@ -111,7 +111,7 @@ determineExports' owns doneMods todoMods = mdo
     getExports _ _ = error "Exports.getExports: bad."
 
     -- | determine what is visible in a module
-    getImports :: Monad m => ModInfo -> (Module -> m (Rel Name Name)) -> m (Rel Name Name)
+    getImports :: MonadFail m => ModInfo -> (Module -> m (Rel Name Name)) -> m (Rel Name Name)
     getImports mi le = mapM f is >>= \xs -> return (mconcat (ls:xs))  where
         f x = do
             es <- le (hsImportDeclModule x)

@@ -21,7 +21,7 @@ module FrontEnd.HsPretty (PPLayout(..),PPHsMode(..),
                 ) where
 
 import Data.Char
-import qualified Text.PrettyPrint.HughesPJ as P
+import qualified Text.PrettyPrint.HughesPJ as P hiding ((<>))
 
 import Doc.DocLike(TextLike(..),DocLike(..))
 import Doc.PPrint(pprint)
@@ -32,6 +32,7 @@ import FrontEnd.SrcLoc(Located(..))
 import Name.Name
 import Name.Names
 import Options
+import Control.Monad (ap)
 import qualified Doc.DocLike as DL
 import qualified Doc.PPrint as P
 
@@ -76,6 +77,9 @@ newtype DocM s a = DocM (s -> a)
 
 instance Functor (DocM s) where
          fmap f xs = do x <- xs; return (f x)
+
+instance Applicative (DocM s) where
+  (<*>) = ap
 
 instance Monad (DocM s) where
         (>>=) = thenDocM
@@ -131,7 +135,7 @@ double = return . P.double
 
 parens, brackets, braces :: Doc -> Doc
 parens d = d >>= return . P.parens
-parenszh d = d >>= \d' -> return $ P.text "(# " P.<> d' P.<> P.text " #)"
+parenszh d = d >>= \d' -> return $ P.text "(# " <> d' <> P.text " #)"
 
 brackets d = d >>= return . P.brackets
 braces d = d >>= return . P.braces
@@ -144,9 +148,11 @@ comma = return P.comma
 equals = return P.equals
 
 -- Combinators
---
+
+instance Semigroup Doc where
+    aM <> bM = do{a<-aM;b<-bM;return (a <> b)}
+
 instance DocLike Doc where
-    aM <> bM = do{a<-aM;b<-bM;return (a P.<> b)}
     aM <+> bM = do{a<-aM;b<-bM;return (a P.<+> b)}
     aM <$> bM = do{a<-aM;b<-bM;return (a P.$$ b)}
     hcat dl = sequence dl >>= return . P.hcat

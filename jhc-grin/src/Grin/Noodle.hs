@@ -126,7 +126,7 @@ grinFunctions_s nf grin = grin { grinFunctions = nf }
 -- examining and reporting
 --------------------------
 
-isManifestNode :: Monad m => Exp -> m [Atom]
+isManifestNode :: MonadFail m => Exp -> m [Atom]
 isManifestNode e = f (sempty :: GSet Atom) e where
     f lf _ | False && trace ("isManifestNode: " ++ show lf) False = undefined
     f lf (Return [(NodeC t _)]) = return [t]

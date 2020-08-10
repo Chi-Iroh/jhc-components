@@ -4,6 +4,7 @@ module Util.ReaderWriter(ReaderWriter(),runReaderWriter) where
 import Data.Monoid
 import Control.Monad.Reader
 import Control.Monad.Writer
+import Control.Applicative
 -- strict unboxed ReaderWriter monad
 
 newtype ReaderWriter r w a = ReaderWriter { _runReaderWriter :: r -> (# a, w #) }
@@ -15,6 +16,10 @@ runReaderWriter (ReaderWriter m) r = case m r of
 instance Functor (ReaderWriter r w) where
         fmap f (ReaderWriter g) = ReaderWriter $ \r -> case g r of
             (# a, w #) -> (# f a, w #)
+
+instance (Monoid w) => Applicative (ReaderWriter r w) where
+  (<*>) = ap
+  pure = return
 
 instance (Monoid w) => Monad (ReaderWriter r w) where
         return a = ReaderWriter $ \_ -> (# a, mempty #)

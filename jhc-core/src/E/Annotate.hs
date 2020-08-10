@@ -1,7 +1,7 @@
 module E.Annotate where
 
 import Control.Monad.Reader
-import Data.Monoid
+import Data.Monoid hiding (Alt)
 import qualified Data.Traversable as T
 
 import E.E
@@ -46,7 +46,7 @@ annotateCombs imap idann letann lamann cs = do
         nb <- f nimap (combBody comb)
         return . combRules_s rs . combBody_s nb $ comb
 
-annotateDs :: Monad m =>
+annotateDs :: MonadFail m =>
     (IdMap (Maybe E))
     -> (Id -> Info -> m Info)  -- ^ annotate based on Id map
     -> (E -> Info -> m Info)   -- ^ annotate letbound bindings

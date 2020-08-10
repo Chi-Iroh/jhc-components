@@ -1,6 +1,7 @@
 module Util.ContextMonad where
 
 import Control.Monad.Error
+import Control.Applicative
 
 class Monad m => ContextMonad m where
     type ContextOf m
@@ -11,12 +12,14 @@ instance Error [String] where
     strMsg s = [s]
 
 newtype ContextEither a = ContextEither (Either [String] a)
-    deriving(Functor)
+    deriving(Functor, Applicative)
 
 runContextEither (ContextEither a) = a
 
-instance Monad ContextEither where
+instance MonadFail ContextEither where
     fail s = ContextEither (Left [s])
+
+instance Monad ContextEither where
     ContextEither x >>= y = case x of
         Left ss -> ContextEither (Left ss)
         Right v -> y v

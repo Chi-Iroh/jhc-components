@@ -220,7 +220,7 @@ data TyTy = TyTy {
 tyTy = TyTy { tySlots = [], tyReturn = [], tySiblings = Nothing, tyThunk = TyNotThunk }
 
 newtype TyEnv = TyEnv (GMap Atom TyTy)
-    deriving(Monoid)
+    deriving(Monoid, Semigroup)
 
 -- random utility values
 
@@ -335,7 +335,7 @@ partialTag v c = case fromAtom v of
     ('b':xs) | 0 <- c ->  toAtom $ 'B':xs
     _ -> error $  "partialTag: " ++ show (v,c)
 
-tagUnfunction :: Monad m => Tag -> m (Int, Tag)
+tagUnfunction :: MonadFail m => Tag -> m (Int, Tag)
 tagUnfunction t
     | tagIsSuspFunction t = return (0,tagFlipFunction t)
     | tagIsFunction t = return (0,t)
@@ -523,7 +523,7 @@ instance FreeVars FuncProps (Set.Set Var) where
 instance FreeVars FuncProps (Set.Set Tag) where
     freeVars FuncProps { funcTags = fv } = fv
 
-instance FreeVars FuncProps a => FreeVars FuncDef a where
+instance (FreeVars FuncProps a, Monoid a) => FreeVars FuncDef a where
     freeVars fd = freeVars (funcDefProps fd)
 
 instance FreeVars Exp (Set.Set Var) where
@@ -728,6 +728,6 @@ instance Intjection Var where
     fromIntjection (V i) = fromIntegral i
 
 newtype instance GSet Var = GSetVar (IntjectionSet Var)
-    deriving(Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,Eq,Ord)
+    deriving(Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,Eq,Ord,Semigroup)
 newtype instance GMap Var v = GMapVar (IntjectionMap Var v)
-    deriving(Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,MapLike,Eq,Ord)
+    deriving(Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,MapLike,Eq,Ord,Semigroup)

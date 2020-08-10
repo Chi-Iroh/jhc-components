@@ -92,7 +92,9 @@ data FieldMap = FieldMap
 
 instance Monoid FieldMap where
     mempty = FieldMap mempty mempty
-    FieldMap a b `mappend` FieldMap c d =
+
+instance Semigroup FieldMap where
+    FieldMap a b <> FieldMap c d =
         FieldMap (a `mappend` c) (b `mappend` d)
 
 type SubTable = Map.Map Name Name
@@ -879,6 +881,8 @@ instance Monad RM where
         r <- x
         unRM $ y r
     return x = RM $ return x
+
+instance MonadFail RM where
     fail s = do
         sl <- getSrcLoc
         addWarn ParseError s
@@ -944,7 +948,7 @@ instance DeNameable HsExp where
             HsCase (dn hsExp) (dn hsAlts)
         f p = runIdentity $ traverseHsExp (return . dn) p
 
-doToExp :: Monad m
+doToExp :: MonadFail m
     => m HsName    -- ^ name generator
     -> HsName      -- ^ bind (>>=) to use
     -> HsName      -- ^ bind_ (>>) to use

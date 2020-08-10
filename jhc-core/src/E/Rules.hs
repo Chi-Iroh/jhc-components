@@ -108,7 +108,9 @@ combineRules as bs = map head $ sortGroupUnder ruleUniq (as ++ bs)
 
 instance Monoid Rules where
     mempty = Rules mempty
-    mappend (Rules x) (Rules y) = Rules $ unionWith combineRules x y
+
+instance Semigroup Rules where
+    (<>) (Rules x) (Rules y) = Rules $ unionWith combineRules x y
 
 fromRules :: [Rule] -> Rules
 fromRules rs = Rules $ fmap snds $ fromList $ sortGroupUnderF fst [ (tvrIdent $ ruleHead r,ruleUpdate r) | r <- rs ]
@@ -160,7 +162,9 @@ arules xs = ARules { aruleFreeVars = freeVars rs, aruleRules = rs } where
 
 instance Monoid ARules where
     mempty = ARules { aruleFreeVars = mempty, aruleRules = [] }
-    mappend = joinARules
+
+instance Semigroup ARules where
+    (<>) = joinARules
 
 ruleUpdate rule = rule {
         ruleNArgs = length  (ruleArgs rule),
@@ -225,7 +229,7 @@ makeRule name uniq ruleType fvs head args body = rule where
 -- | find substitution that will transform the left term into the right one,
 -- only substituting for the vars in the list
 
-match :: Monad m =>
+match :: MonadFail m =>
     (Id -> Maybe E)      -- ^ function to look up values in the environment
     -> [TVr]              -- ^ vars which may be substituted
     -> E                  -- ^ pattern to match

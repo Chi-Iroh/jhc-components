@@ -59,7 +59,7 @@ program = Program {
 progEntryPoints prog = map combHead $ concatMap (progComb prog) (toList $ progEntry prog)
 progMainEntry prog = combHead . runIdentity $ progComb prog (progMain prog)
 
-progComb :: Monad m => Program -> Id -> m Comb
+progComb :: MonadFail m => Program -> Id -> m Comb
 progComb prog x = case x `mlookup`  progCombMap prog of
     Nothing -> fail $ "progComb: can't find '" ++ show (tvrShowName tvr { tvrIdent = x }) ++  "'"
     Just c -> return c
@@ -90,7 +90,7 @@ programSetDs ds prog = progCombinators_s [ bindComb (t,e) | (t,e) <- ds ] prog
 programE :: Program -> E
 programE prog = ELetRec (programDs prog) (EVar (progMainEntry prog))
 
-programEsMap :: Monad m => Program -> m (Map.Map Name (TVr,E))
+programEsMap :: MonadFail m => Program -> m (Map.Map Name (TVr,E))
 programEsMap prog = do
     let f d@(v,_) = case fromId (tvrIdent v) of
             Just n -> return (n,d)

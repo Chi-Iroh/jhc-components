@@ -14,7 +14,7 @@ module E.TypeCheck(
     ) where
 
 import Control.Monad.Reader
-import Control.Monad.Writer
+import Control.Monad.Writer hiding (Alt)
 import qualified Data.Map as Map
 
 import Doc.DocLike
@@ -30,6 +30,7 @@ import Name.Names
 import Support.CanType
 import Util.ContextMonad
 import Util.SetLike
+import Util.Fail
 import qualified Util.Seq as Seq
 import {-# SOURCE #-} DataConstructors
 import {-# SOURCE #-} E.Show
@@ -245,7 +246,7 @@ withContextDoc s a = withContext (render s) a
 
 -- | Perform a full typecheck, evaluating type terms as necessary.
 
-inferType :: (ContextMonad m, ContextOf m ~ String) => DataTable -> [(TVr,E)] -> E -> m E
+inferType :: (ContextMonad m, ContextOf m ~ String, MonadFail m) => DataTable -> [(TVr,E)] -> E -> m E
 inferType dataTable ds e = rfc e where
     inferType' ds e = inferType dataTable ds e
     prettyE = ePretty
@@ -378,9 +379,12 @@ inferType dataTable ds e = rfc e where
     boxCompat (ELit (LitCons { litName = n }))  t | Just e <- fromConjured modBox n =  e == getType t
     boxCompat _ _ = False
 
+--instance MonadFail (Either String) where
+--  fail = Left
+
 -- This should perform a full typecheck and may take any extra information needed as an extra parameter
 class CanTypeCheck a where
-    typecheck :: Monad m => DataTable -> a -> m E
+    typecheck :: MonadFail m => DataTable -> a -> m E
 
 infertype :: CanTypeCheck a => DataTable -> a -> E
 infertype env a = case typecheck env a of
@@ -428,7 +432,7 @@ data TcEnv = TcEnv {
 tcContext_u f r@TcEnv{tcContext  = x} = r{tcContext = f x}
 
 newtype Tc a = Tc (Reader TcEnv a)
-    deriving(Monad,Functor,MonadReader TcEnv)
+    deriving(Monad,Functor,Applicative,MonadReader TcEnv)
 
 instance ContextMonad Tc where
     type ContextOf Tc = String
@@ -471,7 +475,7 @@ tcE e = rfc e where
     fc e = failDoc $ text "what's this? " </> (ePretty e)
 -}
 
-typeInfer'' :: (ContextMonad m, ContextOf m ~ String) => DataTable -> [(TVr,E)] -> E -> m E
+typeInfer'' :: (ContextMonad m, ContextOf m ~ String, MonadFail m) => DataTable -> [(TVr,E)] -> E -> m E
 typeInfer'' dataTable ds e = rfc e where
     inferType' ds e = typeInfer'' dataTable ds e
     rfc e =  withContextDoc (text "fullCheck':" </> ePretty e) (fc e >>= strong')
@@ -512,7 +516,7 @@ typeInfer'' dataTable ds e = rfc e where
 -- | find substitution that will transform the left term into the right one,
 -- only substituting for the vars in the list
 
-match :: Monad m =>
+match :: MonadFail m =>
     (Id -> Maybe E)      -- ^ function to look up values in the environment
     -> [TVr]              -- ^ vars which may be substituted
     -> E                  -- ^ pattern to match

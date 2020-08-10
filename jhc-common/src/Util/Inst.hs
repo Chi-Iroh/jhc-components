@@ -15,8 +15,8 @@ import qualified Data.IntMap as IM
 import qualified Data.Map as Map
 
 #if !HAS_SHOW_IDENTITY
-instance Show a => Show (Identity a) where
-    show x = show $ runIdentity x
+--  instance Show a => Show (Identity a) where
+--      show x = show $ runIdentity x
 #endif
 
 #if !HAS_TRAVERSABLE_INTMAP
@@ -33,8 +33,8 @@ instance Traversable  ((,) a) where
 #endif
 
 #if !HAS_FUNCTOR_TUPLE3
-instance Functor ((,,) a b) where
-    fmap = fmapDefault
+--  instance Functor ((,,) a b) where
+--      fmap = fmapDefault
 #endif
 
 #if !HAS_FOLDABLE_TUPLE3

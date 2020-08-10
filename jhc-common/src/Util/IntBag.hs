@@ -186,9 +186,11 @@ type Prefix = Int
 type Mask   = Int
 type Key    = Int
 
+instance Semigroup IntBag where
+    (<>) = union
+
 instance Monoid IntBag where
     mempty  = empty
-    mappend = union
     mconcat = unions
 
 

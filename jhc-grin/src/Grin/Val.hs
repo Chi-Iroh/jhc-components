@@ -51,8 +51,8 @@ class ToVal a where
     toUnVal x = toVal x
 
 class FromVal a where
-    fromVal :: Monad m => Val -> m a
-    fromUnVal :: Monad m => Val -> m a
+    fromVal :: MonadFail m => Val -> m a
+    fromUnVal :: MonadFail m => Val -> m a
     fromUnVal x = fromVal x
 
 instance ToVal Bool where

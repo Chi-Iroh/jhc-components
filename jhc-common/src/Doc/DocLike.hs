@@ -9,10 +9,10 @@ module Doc.DocLike where
 import Data.Monoid(Monoid(..))
 #endif
 import Control.Monad.Reader()
+import Prelude hiding ((<$>))
 import qualified Text.PrettyPrint.HughesPJ as P
 
 infixr 5 <$> -- ,<//>,<$>,<$$>
-infixr 6 <>
 infixr 6 <+>
 
 class TextLike a where
@@ -24,8 +24,7 @@ class TextLike a where
     char x = text [x]
     empty = text ""
 
-class (TextLike a) => DocLike a where
-    (<>) :: a -> a -> a
+class (TextLike a, Semigroup a) => DocLike a where
     (<+>) :: a -> a -> a
     (<$>) :: a -> a -> a
     hsep :: [a] -> a
@@ -109,7 +108,6 @@ instance TextLike Char where
     text _ = error "TextLike: string to char"
 
 instance DocLike String where
-    a <> b = a ++ b
     a <+> b = a ++ " " ++ b
 
 instance TextLike ShowS where
@@ -117,7 +115,11 @@ instance TextLike ShowS where
     text x = (x ++)
     char c = (c:)
 
-instance DocLike ShowS where
+
+
+instance DocLike ShowS
+
+instance Semigroup ShowS where
     a <> b = a . b
 
 instance (TextLike a, Monad m) => TextLike (m a) where
@@ -125,15 +127,11 @@ instance (TextLike a, Monad m) => TextLike (m a) where
     char x = return (char x)
     text x = return (text x)
 
-instance (DocLike a, Monad m,TextLike (m a)) => DocLike (m a) where
+instance (DocLike a, Monad m,TextLike (m a), Semigroup (m a)) => DocLike (m a) where
     a <$> b = do
         a <- a
         b <- b
         return (a <$> b)
-    a <> b = do
-        a <- a
-        b <- b
-        return (a <> b)
     a <+> b = do
         a <- a
         b <- b
@@ -158,7 +156,6 @@ instance Monoid P.Doc where
 #endif
 
 instance DocLike P.Doc where
-    (<>) = (P.<>)
     (<+>) = (P.<+>)
     (<$>) = (P.$$)
     hsep = P.hsep

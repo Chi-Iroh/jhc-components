@@ -42,7 +42,7 @@ class ConNames a where
     vUnit = error "vUnit"
 
 class FromTupname a where
-    fromTupname :: Monad m => a -> m Int
+    fromTupname :: MonadFail m => a -> m Int
 
 instance FromTupname String where
     fromTupname ('(':s) | (cs,")") <- span (== ',') s, lc <- length cs, lc > 0 = return $! (lc + 1)

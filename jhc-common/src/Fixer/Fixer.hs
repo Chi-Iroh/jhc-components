@@ -92,14 +92,18 @@ newFixer = liftIO $ do
 newtype Rule = Rule { unRule :: IO () }
     deriving(Typeable)
 
+instance Semigroup Rule where
+    (<>) (Rule a) (Rule b) = Rule (a >> b)
+
 instance Monoid Rule where
     mempty = Rule (return ())
-    mappend (Rule a) (Rule b) = Rule (a >> b)
     mconcat rs = Rule $ sequence_ $ map unRule rs
+
+instance Fixable a => Semigroup (Value a) where
+    (<>) a b = UnionValue a b
 
 instance Fixable a => Monoid (Value a) where
     mempty = value bottom
-    mappend a b = UnionValue a b
 
 data Value a = IOValue (IO (Value a)) | UnionValue (Value a) (Value a) | ConstValue a | IV (RvValue a)
     deriving(Typeable)

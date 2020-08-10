@@ -309,7 +309,7 @@ maybeGetDeclName HsClassDecl { hsDeclClassHead = h } = return $ toName ClassName
 maybeGetDeclName x@HsForeignDecl {} = return $ toName Val $ hsDeclName x
 maybeGetDeclName (HsForeignExport _ e _ _)   = return $ ffiExportName e
 --maybeGetDeclName (HsTypeSig _ [n] _ ) = return n
-maybeGetDeclName d = fail  $ "getDeclName: could not find name for a decl: " ++ show d
+maybeGetDeclName d = error  $ "getDeclName: could not find name for a decl: " ++ show d
 
 getDeclName :: HsDecl -> Name
 getDeclName d =  runIdentity $ maybeGetDeclName d

@@ -102,7 +102,7 @@ data DatDesc
     | DatMany [(Name,Int)]
     | DatNewT Name
 
-getDataDesc :: Monad m => HsDecl -> m (Name,DatDesc)
+getDataDesc :: MonadFail m => HsDecl -> m (Name,DatDesc)
 getDataDesc d = g d where
     g desc = do
         r <- f d

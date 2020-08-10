@@ -1,4 +1,4 @@
-{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE RankNTypes #-}
 module Ho.Binary(readHoFile,recordHoFile,readHlFile,recordHlFile) where
 
 import Codec.Compression.Zlib
@@ -19,7 +19,9 @@ import Support.CFF
 import Support.MapBinaryInstance
 import Version.Config(ho_version)
 
-readHFile :: FilePath -> IO (FilePath,HoHeader,forall a . Binary a => ChunkType -> a)
+newtype ChunkFunk = CF { unCF :: forall a . Binary a => ChunkType -> a }
+
+readHFile :: FilePath -> IO (FilePath,HoHeader, ChunkFunk)
 readHFile fn = do
     bs <- BS.readFile fn
     fn' <- shortenPath fn
@@ -30,13 +32,13 @@ readHFile fn = do
             Just x -> decode . decompress $ LBS.fromChunks [x]
     let hoh = fc cff_jhdr
     when (hohVersion hoh /= ho_version) $ fail "invalid version in hofile"
-    return (fn',hoh,fc)
+    return (fn',hoh, CF fc)
 
 readHoFile :: FilePath -> IO (HoHeader,HoIDeps,Ho)
 readHoFile fn = do
     (_fn,hoh,fc) <- readHFile fn
     let Left modGroup = hohName hoh
-    return (hoh,fc cff_idep,Ho { hoModuleGroup = modGroup, hoTcInfo = fc cff_defs, hoBuild = fc cff_core})
+    return (hoh, unCF fc cff_idep,Ho { hoModuleGroup = modGroup, hoTcInfo = unCF fc cff_defs, hoBuild = unCF fc cff_core})
 
 recordHoFile ::
     Ho               -- ^ File to record
@@ -101,9 +103,9 @@ recordHlFile l = do
 readHlFile :: FilePath -> IO Library
 readHlFile fn = do
     (_fn',hoh,fc) <- readHFile fn
-    return Library { libHoHeader = hoh, libHoLib =  fc cff_libr,
-        libTcMap = fc cff_ldef, libBuildMap = fc cff_lcor,
-        libFileName = fn, libExtraFiles = fc cff_file }
+    return Library { libHoHeader = hoh, libHoLib =  unCF fc cff_libr,
+        libTcMap = unCF fc cff_ldef, libBuildMap = unCF fc cff_lcor,
+        libFileName = fn, libExtraFiles = unCF fc cff_file }
 
 instance Binary ExtraFile where
     put (ExtraFile a b) = put (a,b)
@@ -161,9 +163,9 @@ instance Data.Binary.Binary HoLib where
     ad <- get
     return (HoLib aa ab ac ad)
 
-instance Binary Data.Version.Version where
-    put (Data.Version.Version a b) = put a >> put b
-    get = liftM2 Data.Version.Version get get
+--instance Binary Data.Version.Version where
+--    put (Data.Version.Version a b) = put a >> put b
+--    get = liftM2 Data.Version.Version get get
 
 instance Data.Binary.Binary HoTcInfo where
     put (HoTcInfo aa ab ac ad ae af ag ah) = do

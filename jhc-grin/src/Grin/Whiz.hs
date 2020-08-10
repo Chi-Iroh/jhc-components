@@ -6,6 +6,7 @@ import Control.Monad.Writer
 import Util.GMap
 import Util.HasSize
 import Util.SetLike
+import Util.Fail
 import qualified Data.Set as Set
 
 import Grin.Grin
@@ -35,7 +36,7 @@ normalizeGrin' grin = setGrinFunctions (f (grinFuncs grin) []) grin  where
     f ((a,lm):xs) ys  = f xs ((a,lm'):ys) where
         (Identity (lm',_)) = whiz (\_ x -> x) (return . Just) return (Right 1) lm
 
-whizExps :: Monad m => (Exp -> m Exp) -> Lam -> m Lam
+whizExps :: MonadFail m => (Exp -> m Exp) -> Lam -> m Lam
 whizExps f l = liftM fst $ whiz (\_ x -> x) (\(p,e) -> f e >>= \e' -> return  (Just (p,e'))) f whizState l
 
 -- | magic traversal and flattening routine.
@@ -49,7 +50,7 @@ whizExps f l = liftM fst $ whiz (\_ x -> x) (\(p,e) -> f e >>= \e' -> return  (J
 -- Whiz also vectorizes tuple->tuple assignments, breaking them into individual assignments
 -- for its components to better aid future optimizations.
 
-whiz :: Monad m =>
+whiz :: MonadFail m =>
     (forall a . [Val] -> m a -> m a)         -- ^ called for each sub-code block, such as in case statements
     -> (([Val],Exp) -> m (Maybe ([Val],Exp)))  -- ^ routine to transform or omit simple bindings
     -> (Exp -> m Exp)       -- ^ routine to transform final statement in code block
@@ -117,7 +118,7 @@ whiz sub te tf inState start = res where
 -- fizz is similar to whiz, but processes things in 'bottom-up' order.
 -- fizz also removes all statements past an Error.
 
-fizz :: Monad m =>
+fizz :: MonadFail m =>
     (forall a . [Val] -> m a -> m a)         -- ^ called for each sub-code block, such as in case statements
     -> (([Val],Exp) -> m (Maybe ([Val],Exp)))  -- ^ routine to transform or omit simple bindings
     -> (Exp -> m Exp)       -- ^ routine to transform final statement in code block

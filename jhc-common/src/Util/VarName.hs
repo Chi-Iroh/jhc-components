@@ -11,10 +11,11 @@ module Util.VarName(
 
 import Control.Monad.State
 import Control.Monad.Identity
-import qualified Data.Map as Map
+import Control.Applicative
+import qualified Data.Map.Strict as Map
 
 newtype VarNameT nc ni no m a = VarName (StateT (Map.Map ni no, Map.Map nc Int) m a)
-    deriving(Monad, MonadTrans, Functor, MonadFix, MonadPlus, MonadIO)
+    deriving(Monad, MonadTrans, Functor, MonadFix, MonadPlus, MonadIO, Applicative, Alternative)
 
 type VarName ni no a = VarNameT () ni no Identity a
 
@@ -38,11 +39,11 @@ newName ns nc ni = VarName $ do
     (nim,ncm) <- get
     let no = ns!!i
         Just i = fmap (subtract 1) $ Map.lookup nc ncm'
-        ncm' = Map.insertWith' (+) nc 1 ncm
+        ncm' = Map.insertWith (+) nc 1 ncm
     put (Map.insert ni no nim, ncm')
     return no
 
-lookupName :: (Ord ni, Monad m,Show ni) => ni -> VarNameT nc ni no m no
+lookupName :: (Ord ni, MonadFail m,Show ni) => ni -> VarNameT nc ni no m no
 lookupName t = VarName $ do
     (nim,_) <- get
     case Map.lookup t nim of
@@ -64,7 +65,7 @@ newLookupName ns nc ni = VarName $ do
         Nothing -> do
             let no = ns!!i
                 Just i = fmap (subtract 1) $ Map.lookup nc ncm'
-                ncm' = Map.insertWith' (+) nc 1 ncm
+                ncm' = Map.insertWith (+) nc 1 ncm
             put (Map.insert ni no nim, ncm')
             return no
 

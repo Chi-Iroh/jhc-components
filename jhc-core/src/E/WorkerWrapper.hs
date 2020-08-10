@@ -1,6 +1,6 @@
 module E.WorkerWrapper(performWorkWrap,workWrapProgram) where
 
-import Control.Monad.Writer.Strict hiding(Product(..))
+import Control.Monad.Writer.Strict hiding(Product(..), Alt)
 import Maybe
 
 import DataConstructors
@@ -32,7 +32,7 @@ isPlain _ = False
 fsubs Demand.None = repeat Demand.lazy
 fsubs (Demand.Product xs) = xs ++ repeat Demand.lazy
 
-wrappable :: Monad m =>
+wrappable :: MonadFail m =>
     DataTable   -- ^ data table
     -> TVr      -- ^ function name we want to workwrap
     -> E        -- ^ function body
@@ -71,7 +71,7 @@ tmpNames ns x = case fromId x of
     Just y  -> [toId (toName ns ("X@",'f':show y ++ "@" ++ show i)) | i <- [(1::Int)..] ]
     Nothing -> [toId (toName ns ("X@",'f':show x ++ "@" ++ show i)) | i <- [(1::Int)..] ]
 
-workWrap' :: MonadStats m => DataTable -> TVr -> E -> m ((TVr,E),(TVr,E))
+workWrap' :: (MonadStats m, MonadFail m) => DataTable -> TVr -> E -> m ((TVr,E),(TVr,E))
 workWrap' _dataTable tvr _e
     | badProps `intersects` getProperties tvr = fail "Don't workwrap this"
     where badProps = fromList [prop_WRAPPER,prop_INLINE,prop_SUPERINLINE,prop_PLACEHOLDER,prop_NOINLINE]

@@ -7,6 +7,7 @@ import Data.IORef
 import Data.Monoid(Monoid(..))
 import List
 import Maybe
+import Prelude hiding ((<$>))
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -69,7 +70,7 @@ unboxedMap = [
     ]
 
 newtype C a = C (ReaderT LEnv IO a)
-    deriving(Monad,MonadReader LEnv,UniqueProducer,Functor,MonadIO,Stats.MonadStats)
+    deriving(Monad,MonadReader LEnv,UniqueProducer,Functor,MonadIO,Stats.MonadStats,Applicative,MonadFail)
 
 runC :: LEnv -> C a -> IO a
 runC lenv (C x) = runReaderT x lenv
@@ -180,7 +181,7 @@ compile prog@Program { progDataTable = dataTable } = do
         os <- onceMapToList errorOnce
         mapM_ print os
     let tf a = a:tagToFunction a
-    ds <- return $ flattenScc $ stronglyConnComp [ (a,x, concatMap tf (freeVars z)) | a@(x,(_ :-> z)) <- ds]
+    ds <- return $ flattenScc $ stronglyConnComp [ (a,x, concatMap tf ((freeVars z) :: [Atom])) | a@(x,(_ :-> z)) <- ds]
 
     -- FFI
     let tvrAtom t  = liftM convertName (fromId $ tvrIdent t)
@@ -300,7 +301,7 @@ constantCaf Program { progDataTable = dataTable, progCombinators = combs } = ans
 
     fst3 (x,_,_) = x
 
-getName' :: (Show a,Monad m) => DataTable -> Lit a E -> m Atom
+getName' :: (Show a,MonadFail m) => DataTable -> Lit a E -> m Atom
 getName' dataTable v@LitCons { litName = n, litArgs = es }
     | Just _ <- fromUnboxedNameTuple n = fail $ "unboxed tuples don't have names silly"
     | isDataAlias (conChildren cons) = error $ "Alias still exists: " ++ show v
@@ -682,7 +683,7 @@ compile' cenv (tvr,as,e) = ans where
     -- runtime behavior is considered, it means a compile time constant, the
     -- CAFs may be updated with evaluated values.
 
-    constant :: Monad m =>  E -> m Val
+    constant :: MonadFail m =>  E -> m Val
     constant (EVar tvr) | Just c <- mlookup (tvrIdent tvr) (ccafMap cenv) = return c
                         | Just (v,as,_) <- mlookup (tvrIdent tvr) (scMap cenv)
                          , t <- partialTag v (length as), tagIsWHNF t = if isLifted (EVar tvr) then return $ Const $ NodeC t [] else return (NodeC t [])
@@ -695,7 +696,7 @@ compile' cenv (tvr,as,e) = ans where
     constant _ = fail "not a constant term"
 
     -- | convert a constructor into a Val, arguments may depend on local vars.
-    con :: Monad m => E -> m [Val]
+    con :: MonadFail m => E -> m [Val]
     con (EPi (TVr {tvrIdent =  z, tvrType = x}) y) | isEmptyId z = do
         return $  [NodeC tagArrow (args [x,y])]
     con v@(ELit LitCons { litName = n, litArgs = es })
@@ -724,7 +725,7 @@ compile' cenv (tvr,as,e) = ans where
         return $! V i
 
 -- | converts an unboxed literal
-literal :: Monad m =>  E -> m [Val]
+literal :: MonadFail m =>  E -> m [Val]
 literal (ELit LitCons { litName = n, litArgs = xs })  |  Just xs <- mapM literal xs, Just _ <- fromUnboxedNameTuple n = return (keepIts $ concat xs)
 literal (ELit (LitInt i ty)) | Just ptype <- toCmmTy ty = return $ [Lit i (TyPrim ptype)]
 literal (ELit (LitInt i (ELit (LitCons { litArgs = [], litAliasFor = Just af }))))  = literal $ ELit (LitInt i af)

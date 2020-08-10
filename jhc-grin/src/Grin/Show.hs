@@ -11,6 +11,7 @@ import Char
 import Control.Monad.Writer(tell,when,forM_,execWriter)
 import Data.Maybe
 import IO
+import Prelude hiding ((<$>))
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 

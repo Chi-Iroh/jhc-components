@@ -7,7 +7,7 @@ import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.State
 import Data.Maybe
-import Data.Monoid
+import Data.Monoid hiding (Alt)
 import qualified Data.Foldable as T
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -216,7 +216,7 @@ fuzzyConstant :: E -> Typ
 fuzzyConstant e | Just (n,as) <- toLit e = vmapValue n (map fuzzyConstant as)
 fuzzyConstant _ = vmapPlaceholder ()
 
-typConstant :: Monad m => E -> m Typ
+typConstant :: MonadFail m => E -> m Typ
 typConstant e | Just (n,as) <- toLit e = return (vmapValue n) `ap` mapM typConstant as
 typConstant e = fail $ "typConstant: " ++ show e
 
@@ -227,7 +227,7 @@ data SpecEnv = SpecEnv {
     senvArgs      :: Map.Map TVr [Int]
     }
 
-getTyp :: Monad m => E -> DataTable -> Typ -> m E
+getTyp :: MonadFail m => E -> DataTable -> Typ -> m E
 getTyp kind dataTable vm = f (10::Int) kind vm where
     f n _ _ | n <= 0 = fail "getTyp: too deep"
     f n kind vm | Just [] <- vmapHeads vm = return $ tAbsurd kind
@@ -289,7 +289,7 @@ evalErrorT err action = liftM f (runErrorT action) where
     f (Left _) = err
     f (Right x) = x
 
-eToPatM :: Monad m => (E -> m TVr) -> E -> m (Lit TVr E)
+eToPatM :: MonadFail m => (E -> m TVr) -> E -> m (Lit TVr E)
 eToPatM cv e = f e where
     f (ELit LitCons { litAliasFor = af,  litName = x, litArgs = ts, litType = t }) = do
         ts <- mapM cv ts
@@ -377,7 +377,7 @@ specializeCombs doSpecialize env@SpecEnv { senvUnusedRules = unusedRules, senvDa
     ds <- mapM f ds
     return (ds,tenv)
 
-expandPlaceholder :: Monad m => Comb -> m Comb
+expandPlaceholder :: MonadFail m => Comb -> m Comb
 expandPlaceholder comb  | getProperty prop_PLACEHOLDER (combHead comb) = do
     let rules = filter isBodyRule $  combRules comb
         tvr = combHead comb

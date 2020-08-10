@@ -13,6 +13,7 @@ import Support.FreeVars(freeVars)
 import Util.Once
 import Util.SetLike
 import Util.UniqueMonad()
+import Util.Fail
 
 {-
 data UpdateType =

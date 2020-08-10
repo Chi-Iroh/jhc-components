@@ -20,6 +20,7 @@ module Info.Info(
     ) where
 
 import Data.Dynamic
+import Data.Typeable
 import Data.Monoid
 import qualified Data.List as List
 
@@ -63,7 +64,9 @@ instance Show Info where
 
 instance Monoid Info where
     mempty = empty
-    mappend (Info as) (Info bs) = Info (List.union as bs)
+
+instance Semigroup Info where
+    (<>) (Info as) (Info bs) = Info (List.union as bs)
 
 class HasInfo a where
     getInfo :: a -> Info
@@ -81,7 +84,7 @@ lookupTyp a = f where
     g (x:xs) | entryType x == typ = fromDynamic (entryThing x)
     g (_:xs) = g xs
 
-lookup :: forall a m . (Monad m,Typeable a) => Info -> m a
+lookup :: forall a m . (MonadFail m,Typeable a) => Info -> m a
 lookup = maybe (fail $ "Info: could not find: " ++ show typ) return . f where
     typ = typeOf (undefined :: a)
     f = lookupTyp (undefined :: a)

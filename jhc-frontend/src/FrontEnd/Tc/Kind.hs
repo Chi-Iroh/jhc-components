@@ -81,7 +81,7 @@ KBase kb    `isSubsumedBy` KBase kb'    = isSubsumedBy2 kb kb'
 Kfun  k1 k2 `isSubsumedBy` Kfun k1' k2' = isSubsumedBy k1 k1' && isSubsumedBy k2 k2'
 _           `isSubsumedBy` _            = False
 
-kindCombine :: Monad m => Kind -> Kind -> m Kind
+kindCombine :: MonadFail m => Kind -> Kind -> m Kind
 kindCombine x y = g x y where
     f x y | x == y = return x
 
@@ -113,13 +113,15 @@ data KindConstraint
 
 instance Monoid KindConstraint where
     mempty = KindAny
-    mappend a b | a == b = a
-    mappend KindAny k = k
-    mappend KindStar _ = KindStar
-    mappend KindSimple KindQuest = KindStar
-    mappend KindSimple KindQuestQuest = KindStar
-    mappend KindQuest KindQuestQuest = KindQuestQuest
-    mappend k1 k2 = mappend k2 k1
+
+instance Semigroup KindConstraint where
+    (<>) a b | a == b = a
+    (<>) KindAny k = k
+    (<>) KindStar _ = KindStar
+    (<>) KindSimple KindQuest = KindStar
+    (<>) KindSimple KindQuestQuest = KindStar
+    (<>) KindQuest KindQuestQuest = KindQuestQuest
+    (<>) k1 k2 = mappend k2 k1
 
 data Kindvar = Kindvar {
     kvarUniq       :: {-# UNPACK #-} !Int,

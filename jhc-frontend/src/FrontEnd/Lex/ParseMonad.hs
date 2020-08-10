@@ -57,6 +57,8 @@ instance Monad P where
         (w,Nothing) -> (w,Nothing)
         (w,Just v) -> case unP (fb v) e of
             (w',r) -> (w `mappend` w',r)
+
+instance MonadFail P where
     fail s = P $ \ PEnv { .. } -> (Seq.singleton (Warning (srcLoc envSrcSpan) WarnFailure s),Nothing)
 
 parseNothing = P $ \_ -> (mempty,Nothing)

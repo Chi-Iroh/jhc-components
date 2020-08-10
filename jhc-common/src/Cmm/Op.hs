@@ -198,7 +198,7 @@ preadTy = choice cs where
     f "?"   = BitsArch BitsUnknown
     f x     = BitsExt x
 
-readTy :: Monad m => String -> m Ty
+readTy :: MonadFail m => String -> m Ty
 readTy s = case runReadP preadTy s of
     Nothing -> fail "readTy: not type"
     Just x -> return x

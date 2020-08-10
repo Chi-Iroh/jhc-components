@@ -82,7 +82,7 @@ discardArgs 0 e = e
 discardArgs n (EPi _ b) | n > 0 = discardArgs (n - 1) b
 discardArgs _ _ = error "discardArgs"
 
-tvrName :: Monad m => TVr  -> m Name
+tvrName :: MonadFail m => TVr  -> m Name
 tvrName (TVr {tvrIdent =  n }) | Just a <- fromId n = return a
 tvrName tvr = fail $ "TVr is not Name: " ++ show tvr
 
@@ -98,7 +98,7 @@ nameConjured mod n = toName TypeConstructor (mod,f n "") where
     f (EPi TVr { tvrType = t1 } t2) = ('^':) . f t1 . f t2
     f _ = error $ "nameConjured: " ++ show (mod,n)
 
-fromConjured :: Monad m => Module -> Name -> m E
+fromConjured :: MonadFail m => Module -> Name -> m E
 fromConjured mod n = maybeM ("fromConjured: " ++ show (mod,n)) $ do
     let f s = funit s `mplus` flam s
         flam ('^':xs) = do (x,rs) <- f xs; (y,gs) <- f rs; return (EPi tvr { tvrType = x } y,gs)
@@ -127,7 +127,7 @@ caseBodiesMapM _ _ = error "caseBodiesMapM"
 caseBodiesMap :: (E -> E) -> E -> E
 caseBodiesMap f ec = runIdentity $ caseBodiesMapM (\x -> return $ f x) ec
 
-eToList :: Monad m => E -> m  [E]
+eToList :: MonadFail m => E -> m  [E]
 eToList (ELit LitCons { litName = n, litArgs = [e,b] }) | dc_Cons == n = eToList b >>= \x -> return (e:x)
 eToList (ELit LitCons { litName = n, litArgs = [] }) | dc_EmptyList == n = return []
 eToList _ = fail "eToList: not list"
@@ -145,7 +145,7 @@ p_dependingOn = primPrim "dependingOn"
 p_toTag = primPrim "toTag"
 p_fromTag = primPrim "fromTag"
 
-fromUnboxedTuple :: Monad m => E -> m [E]
+fromUnboxedTuple :: MonadFail m => E -> m [E]
 fromUnboxedTuple (ELit LitCons { litName = n, litArgs = as }) | Just _ <- fromUnboxedNameTuple n = return as
 fromUnboxedTuple _ = fail "fromUnboxedTuple: not a tuple"
 

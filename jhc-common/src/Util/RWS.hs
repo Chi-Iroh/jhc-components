@@ -27,6 +27,7 @@ import Control.Monad.Trans
 import Control.Monad.Reader
 import Control.Monad.Writer
 import Control.Monad.State
+import Control.Applicative
 
 newtype RWS r w s a = RWS { runRWS' :: r -> s -> (# a, s, w #) }
 
@@ -37,6 +38,10 @@ runRWS x r s = case runRWS' x r s of
 instance Functor (RWS r w s) where
         fmap f m = RWS $ \r s -> case runRWS' m r s of
                 (# a, s', w #) -> (# f a, s', w #)
+
+instance (Monoid w) => Applicative (RWS r w s) where
+  (<*>) = ap
+  pure = return
 
 instance (Monoid w) => Monad (RWS r w s) where
         return a = RWS $ \_ s -> (# a, s, mempty #)

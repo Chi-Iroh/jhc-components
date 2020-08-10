@@ -1,7 +1,7 @@
 -- Cabal Project configuration. For more information see
 -- https://cabal.readthedocs.io/en/latest/nix-local-build-overview.html
 
-with-compiler: ghc-7.8.4
+-- with-compiler: ghc-7.8.4
 
 packages:
   ./jhc-compat

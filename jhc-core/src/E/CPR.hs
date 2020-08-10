@@ -23,7 +23,7 @@ import qualified E.Demand as Demand
 import qualified Info.Info as Info
 
 newtype Env = Env (Map.Map TVr Val)
-    deriving(Monoid)
+    deriving(Monoid, Semigroup)
 
 data Val =
     Top               -- the top.
@@ -76,7 +76,9 @@ lub _ _ = Top
 
 instance Monoid Val where
     mempty = Bot
-    mappend = lub
+
+instance Semigroup Val where
+    (<>) = lub
 
 {-# NOINLINE cprAnalyzeProgram #-}
 cprAnalyzeProgram :: Program -> Program

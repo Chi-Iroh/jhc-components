@@ -23,6 +23,8 @@ import qualified Data.Map as Map
 import qualified Doc.Chars as UC
 import qualified FlagDump as FD
 
+import Prelude hiding ((<$>))
+
 {-# NOINLINE render #-}
 {-# NOINLINE ePretty #-}
 {-# NOINLINE prettyE #-}
@@ -45,8 +47,14 @@ instance PPrint String (Lit E E) where
     pprintAssoc _ n x | n <= 9    = prettyE (ELit x)
                       | otherwise = parens (prettyE (ELit x))
 
+instance (Semigroup a) => Semigroup (SEM a) where
+  a <> b = do
+    a' <- a
+    b' <- b
+    return $ a' <> b'
+
 newtype SEM a = SEM { _unSEM :: VarNameT E Id String Identity a }
-    deriving(Monad,Functor)
+    deriving(Monad,Functor,Applicative)
 
 enumList = [
     (tc_Bool_,["False#","True#"]),

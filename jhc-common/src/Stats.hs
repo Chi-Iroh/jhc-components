@@ -36,6 +36,7 @@ module Stats(
 import Util.Std
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
+import Control.Applicative
 import Data.IORef
 import Data.Tree
 import Prelude hiding(null)
@@ -91,7 +92,7 @@ draw (Node x ts0) = x : drawSubTrees ts0
 -- Pure varients
 
 newtype Stat = Stat IB.IntBag
-    deriving(Eq,Ord,Monoid)
+    deriving(Eq,Ord,Monoid,Semigroup)
 
 prependStat :: String -> Stat -> Stat
 prependStat name (Stat m) = Stat $ IB.fromList [ (fromAtom $ mappend (toAtom $ "{" ++ name ++ "}.")  (unsafeIntToAtom x),y) | (x,y) <- IB.toList m ]
@@ -117,7 +118,7 @@ class Monad m => MonadStats m where
     mtickStat :: Stat -> m ()
 
 newtype StatT m a = StatT (WriterT Stat m a)
-    deriving(MonadIO, Functor, MonadFix, MonadTrans, Monad)
+    deriving(MonadIO, Functor, MonadFix, MonadTrans, Monad, Applicative, MonadFail)
 
 runStatT :: Monad m => StatT m a -> m (a,Stat)
 runStatT (StatT m) =  runWriterT m
@@ -126,6 +127,10 @@ data StatM a = StatM a !Stat
 
 instance Functor StatM where
     fmap f (StatM a s) = StatM (f a) s
+
+instance Applicative StatM where
+  (<*>) = ap
+  pure = return
 
 instance Monad StatM where
     StatM _ s1 >> StatM y s2 = StatM y (s1 `mappend` s2)
@@ -136,6 +141,9 @@ instance Stats.MonadStats StatM where
    mticks' 0 k = StatM () mempty
    mticks' n k = StatM () $ Stats.singleStat n k
    mtickStat s = StatM () s
+
+instance MonadFail StatM where
+  fail = error
 
 runStatM ::  StatM a -> (a,Stat)
 runStatM (StatM a s) = (a,s)

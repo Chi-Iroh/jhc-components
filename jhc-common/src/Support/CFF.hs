@@ -77,7 +77,7 @@ isPrivate  (ChunkType w) =  w .&. 0x00200000 == 0
 isSafeToCopy :: ChunkType -> Bool
 isSafeToCopy (ChunkType w) =  w .&. 0x00000020 == 0
 
-lbsCFF :: Monad m => LBS.ByteString -> m (FileType,[(ChunkType,LBS.ByteString)])
+lbsCFF :: MonadFail m => LBS.ByteString -> m (FileType,[(ChunkType,LBS.ByteString)])
 lbsCFF bs = ans bs where
     ans bs' = do
         let checkByte n b = do
@@ -110,7 +110,7 @@ lbsCFF bs = ans bs where
             ct = ChunkType $ bsWord32 (LBS.drop 4 bs)
             (bdata,brest)  = LBS.splitAt (fromIntegral len) (LBS.drop 8 bs)
 
-bsCFF :: Monad m => BS.ByteString -> m (FileType,[(ChunkType,BS.ByteString)])
+bsCFF :: MonadFail m => BS.ByteString -> m (FileType,[(ChunkType,BS.ByteString)])
 bsCFF bs = ans bs where
     ans bs = do
         let checkByte n b = do

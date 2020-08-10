@@ -80,6 +80,7 @@ import Data.List(intersperse)
 import Data.Maybe(isNothing)
 import Numeric
 import Text.PrettyPrint.HughesPJ(Doc,render,nest,($$),($+$))
+import Prelude hiding ((<$>))
 import qualified Data.Foldable as Seq
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
@@ -100,7 +101,13 @@ data Env = Env {
 emptyEnv = Env { envUsedLabels = mempty, envInScope = mempty }
 
 newtype G a = G (RWS Env [(Name,Type)] (Int,Map.Map [Type] Name) a)
-    deriving(Monad,MonadWriter [(Name,Type)],MonadState (Int,Map.Map [Type] Name),MonadReader Env,MonadFix)
+    deriving(Monad,MonadWriter [(Name,Type)],MonadState (Int,Map.Map [Type] Name),MonadReader Env,MonadFix, Applicative, Functor)
+
+instance (Semigroup a, Monad m) => Semigroup (m a) where
+  a <> b = do
+    a' <- a
+    b' <- b
+    return (a' <> b')
 
 newtype Name = Name String
     deriving(Eq,Ord)
@@ -169,6 +176,9 @@ class Draw d where
 instance Draw Statement where
     draw (St ss) = vcat (map draw $ Seq.toList ss)
     err s = sd $ terr s
+
+instance Semigroup Statement where
+   (<>) (St as) (St bs) = St $ pairOpt stmtPairOpt as bs
 
 instance Draw Stmt where
     err s = SD (terr s)

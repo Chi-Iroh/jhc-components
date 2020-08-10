@@ -29,7 +29,7 @@ import Util.UniqueMonad
 import qualified Util.Graph as G
 
 newtype TypeSynonyms = TypeSynonyms (Map.Map Name ([HsName], HsType, SrcLoc))
-    deriving(Monoid,HasSize)
+    deriving(Semigroup,Monoid,HasSize)
 
 instance Binary TypeSynonyms where
     put (TypeSynonyms ts) = putMap ts
@@ -38,7 +38,7 @@ instance Binary TypeSynonyms where
 restrictTypeSynonyms :: (Name -> Bool) -> TypeSynonyms -> TypeSynonyms
 restrictTypeSynonyms f (TypeSynonyms fm) = TypeSynonyms (Map.filterWithKey (\k _ -> f k) fm)
 
-showSynonym :: (DocLike d,Monad m) => (HsType -> d) -> Name -> TypeSynonyms -> m d
+showSynonym :: (DocLike d,MonadFail m) => (HsType -> d) -> Name -> TypeSynonyms -> m d
 showSynonym pprint n (TypeSynonyms m) =
     case Map.lookup n m of
       Just (ns, t, _) -> return $ hsep (tshow n:map tshow ns) <+> text "=" <+> pprint t

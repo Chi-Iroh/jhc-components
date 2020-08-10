@@ -35,7 +35,7 @@ data TypeError
         = Unification String
         | Failure String
 
-typeError :: Monad m => TypeError -> [Diagnostic] -> m a
+typeError :: MonadFail m => TypeError -> [Diagnostic] -> m a
 typeError err ds
    = fail $ "\n" ++
              "What:    " ++ whatStr ++ "\n" ++

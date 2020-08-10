@@ -61,6 +61,8 @@ import Support.Tickle
 import Util.Gen
 import Util.Inst()
 
+import Prelude hiding ((<$>))
+
 type Assump = (Name,Sigma)
 
 data Inst = Inst {
@@ -71,7 +73,7 @@ data Inst = Inst {
     } deriving(Eq,Ord,Show)
     {-! derive: Binary !-}
 
-instance PPrint a (Qual Pred) => PPrint a Inst where
+instance (PPrint a (Qual Pred), DocLike a) => PPrint a Inst where
     pprint Inst { instHead = h, instAssocs = [], instDerived = d } = (if d then text "*" else text " ") <> pprint h
     pprint Inst { instHead = h, instAssocs = as, instDerived = d } = (if d then text "*" else text " ") <> pprint h <+> text "where" <$> vcat [ text "    type" <+> pprint n <+> text "_" <+> hsep (map pprint ts) <+> text "=" <+> pprint sigma  | (n,_,ts,sigma) <- as]
 
@@ -133,7 +135,9 @@ instance Binary ClassHierarchy where
 
 instance Monoid ClassHierarchy where
     mempty = CH mempty mempty
-    mappend (CH a b) (CH c d) =
+
+instance Semigroup ClassHierarchy where
+    (<>) (CH a b) (CH c d) =
         CH (Map.union a c) (Map.unionWith Data.List.union b d)
 
 classRecords :: ClassHierarchy -> [ClassRecord]
@@ -282,7 +286,7 @@ defaultInstanceName n = toName Val ("Instance@",'i':show n ++ ".default")
 -- aliasDefaultInstanceName :: Name -> Class -> Name
 -- aliasDefaultInstanceName n ca = toName Val ("Instance@",'i':show n ++ ".default."++show ca)
 
-methodToTopDecls :: Monad m
+methodToTopDecls :: MonadFail m
     => KindEnv         -- ^ the kindenv
     -> [Pred]          -- ^ random extra predicates to add
     -> ClassRecord     -- ^ the class we are lifting methods from

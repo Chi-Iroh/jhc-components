@@ -49,13 +49,13 @@ data ShuntSpec m t e = ShuntSpec {
 shuntSpec :: (Monad m, Show t) => ShuntSpec m t e
 shuntSpec = ShuntSpec { .. } where
     appPrec          = (L,10)
-    lookupToken t    = fail $ "ShuntSpec.lookupToken unspecified: " ++ show t
-    lookupUnary t    = fail $ "Operator used in unary location: " ++ show t
-    application _ _  = fail $ "ShuntSpec.application unspecified"
-    operator t _     = fail $ "ShuntSpec.operator unspecified: " ++ show t
-    emptyInput       = fail $ "Empty input to precedence parser"
-    trailingOps _ ts = fail $ "Trailing operators: " ++ show ts
-    equalFixity p ts = fail $ "Cannot mix operators of same fixity: "
+    lookupToken t    = error $ "ShuntSpec.lookupToken unspecified: " ++ show t
+    lookupUnary t    = error $ "Operator used in unary location: " ++ show t
+    application _ _  = error $ "ShuntSpec.application unspecified"
+    operator t _     = error $ "ShuntSpec.operator unspecified: " ++ show t
+    emptyInput       = error $ "Empty input to precedence parser"
+    trailingOps _ ts = error $ "Trailing operators: " ++ show ts
+    equalFixity p ts = error $ "Cannot mix operators of same fixity: "
         ++ show p ++ " " ++ show ts
 
 shunt :: (Show t, Show e,Monad m)

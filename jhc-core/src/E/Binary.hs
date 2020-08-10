@@ -1,6 +1,6 @@
 module E.Binary() where
 
-import Data.Binary
+import Data.Binary hiding (putList)
 import E.Type
 import FrontEnd.HsSyn()
 import Name.Binary()

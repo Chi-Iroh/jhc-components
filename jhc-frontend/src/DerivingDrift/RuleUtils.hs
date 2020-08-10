@@ -6,7 +6,7 @@ module DerivingDrift.RuleUtils (
 
 import DerivingDrift.DataP
 import Name.Name(getIdent)
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint.HughesPJ hiding ((<>))
 
 x = text "x"
 f = text "f"

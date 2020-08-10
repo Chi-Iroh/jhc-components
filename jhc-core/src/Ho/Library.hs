@@ -170,7 +170,7 @@ collectLibraries libs = ans where
         forM_ mbad $ \ (m,l) -> putErrLn $ printf "Module '%s' is exported by multiple libraries: %s" (show m) (show $ map libName l)
         unless (null mbad) $ putErrDie "There were conflicting modules!"
 
-parseLibraryDescription :: Monad m => String -> m [(String,String)]
+parseLibraryDescription :: MonadFail m => String -> m [(String,String)]
 parseLibraryDescription fs =  g [] (lines (f [] fs)) where
     --f rs ('\n':s:xs) | isSpace s = f rs (dropWhile isSpace xs)
     f rs ('-':'-':xs) = f rs (dropWhile (/= '\n') xs)

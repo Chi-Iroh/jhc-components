@@ -14,7 +14,9 @@ newtype Rel a b = Rel (Map.Map a (Set b))
 
 instance (Ord a,Ord b) => Monoid (Rel a b) where
     mempty = Rel mempty
-    mappend (Rel r1) (Rel r2) = Rel $ Map.unionWith Set.union r1 r2
+
+instance (Ord a, Ord b) => Semigroup (Rel a b) where
+    (<>) (Rel r1) (Rel r2) = Rel $ Map.unionWith Set.union r1 r2
 
 instance (Ord a,Ord b) => Unionize (Rel a b) where
     difference (Rel r1) (Rel r2) = Rel $ Map.differenceWith f r1 r2 where

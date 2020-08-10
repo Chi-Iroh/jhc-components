@@ -1,6 +1,7 @@
 module Info.Binary(putInfo, Info.Binary.getInfo) where
 
 import Data.Dynamic
+import Data.Typeable
 import qualified Data.Map as Map
 
 import C.FFI(FfiExport)

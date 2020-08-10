@@ -42,7 +42,9 @@ instance Monoid CollectedHo where
         choVarMap = error "choVarMap-a",
         choLibDeps = mempty
         } where pho = mempty { hoBuild = mempty { hoDataTable = dataTablePrims } }
-    a `mappend` b = updateChoHo CollectedHo {
+
+instance Semigroup CollectedHo where
+    a <> b = updateChoHo CollectedHo {
         choExternalNames = choExternalNames a `mappend` choExternalNames b,
         choVarMap = error "choVarMap-b",
         choOrphanRules = choOrphanRules a `mappend` choOrphanRules b,

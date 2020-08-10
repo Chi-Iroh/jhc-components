@@ -119,7 +119,9 @@ instance FromAtom BS.ByteString where
 
 instance Monoid Atom where
     mempty = toAtom BS.empty
-    mappend x y = unsafePerformIO $ atomAppend x y
+
+instance Semigroup Atom where
+    (<>) x y = unsafePerformIO $ atomAppend x y
 
 instance IsString Atom where
     fromString = toAtom
@@ -130,7 +132,7 @@ instance Show Atom where
 instance Read Atom where
     readsPrec _ s = [ (toAtom s,"") ]
 
-intToAtom :: Monad m => Int -> m Atom
+intToAtom :: MonadFail m => Int -> m Atom
 intToAtom i = if isValidAtom i then return (Atom $ fromIntegral i) else
     fail $ "intToAtom: " ++ show i
 
@@ -165,9 +167,9 @@ instance Intjection Atom where
     fromIntjection (Atom i) = fromIntegral i
 
 newtype instance GSet Atom = GSetAtom (IntjectionSet Atom)
-    deriving(Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,Eq,Ord,Show)
+    deriving(Semigroup,Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,Eq,Ord,Show)
 newtype instance GMap Atom v = GMapAtom (IntjectionMap Atom v)
-    deriving(Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,MapLike,Eq,Ord)
+    deriving(Semigroup,Monoid,IsEmpty,HasSize,Collection,Unionize,SetLike,MapLike,Eq,Ord)
 
 instance Functor (GMap Atom) where
     fmap f (GMapAtom (IntjectionMap mp)) = GMapAtom (IntjectionMap (fmap f mp))

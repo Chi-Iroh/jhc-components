@@ -26,6 +26,7 @@ import Options
 import PackedString
 import StringTable.Atom
 import Util.Gen
+import Util.Fail
 
 data Warning = Warning {
     warnSrcLoc  :: !SrcLoc,
@@ -33,7 +34,7 @@ data Warning = Warning {
     warnMessage :: String
     } deriving(Eq,Ord)
 
-class (Applicative m,Monad m) => MonadWarn m where
+class (Applicative m, MonadFail m) => MonadWarn m where
     addWarning :: Warning -> m ()
     addWarning w = fail $ show w
 
@@ -166,7 +167,7 @@ _warnings = [
 ioWarnings :: IORef [Warning]
 ioWarnings = unsafePerformIO $ newIORef []
 
-instance MonadWarn m => MonadWarn (SLM m) where
+instance (MonadWarn m) => MonadWarn (SLM m) where
     addWarning w = SLM $ addWarning w
 instance MonadWarn IO where
     addWarning w = modifyIORef ioWarnings (w:)

@@ -10,9 +10,9 @@ import Char
 import Control.Applicative(Applicative)
 import Control.Monad.Error
 import Control.Monad.Identity
-import Control.Monad.RWS
+import Control.Monad.RWS hiding (Alt)
 import List(isPrefixOf,nub)
-import Prelude
+import Prelude hiding ((<$>))
 import Text.Printf
 import qualified Data.Map as Map
 import qualified Data.Traversable as T
@@ -98,6 +98,7 @@ tipe t = f t where
         xs' = map (kind . tyvarKind) xs
         in ELit litCons { litName = unboxedNameTuple TypeConstructor (length xs' + 1), litArgs = f t:xs', litType = eHash }
     f TAssoc {} = error "E.FromHs.tipe TAssoc"
+    cvar :: [Tyvar] -> Tyvar -> TVr' E
     cvar fvs tv@Tyvar { tyvarName = n, tyvarKind = k }
         | tv `elem` fvs = setProperty prop_SCRUTINIZED (tVr (lt n) (kind k))
         | otherwise = tVr (lt n) (kind k)
@@ -152,7 +153,7 @@ argTypes e = span (sortSortLike . getType) (map tvrType xs) where
 argTypes' :: E -> ([E],E)
 argTypes' e = let (x,y) = fromPi e in (map tvrType y,x)
 
-getMainFunction :: Monad m => DataTable -> Name -> (Map.Map Name (TVr,E)) -> m (TVr,E)
+getMainFunction :: MonadFail m => DataTable -> Name -> (Map.Map Name (TVr,E)) -> m (TVr,E)
 getMainFunction dataTable name ds = do
   mt <- case Map.lookup name ds of
     Just x -> return x
@@ -314,7 +315,7 @@ data CeEnv = CeEnv {
     }
 
 newtype C a = Ce (RWST CeEnv [Warning] Int IO a)
-    deriving(Monad,Applicative,Functor,MonadIO,MonadReader CeEnv,MonadState Int,MonadError IOError)
+    deriving(Monad,Applicative,Functor,MonadIO,MonadReader CeEnv,MonadState Int,MonadError IOError, MonadFail)
 
 instance MonadWarn C where
     addWarning w = liftIO (addWarning w)
@@ -348,7 +349,7 @@ applyCoersion ct e = etaReduce `liftM` f ct e where
         fgy <- f ct (EAp e (EVar y))
         return (eLam y fgy)
 
-fromTuple_ :: Monad m => E -> m [E]
+fromTuple_ :: MonadFail m => E -> m [E]
 fromTuple_ (ELit LitCons { litName = n, litArgs = as }) | Just c <- fromUnboxedNameTuple n, c == length as = return as
 fromTuple_ e = fail "fromTuple_ : not unboxed tuple"
 
@@ -936,7 +937,7 @@ packupString :: String -> (E,Bool)
 packupString s | all (\c -> c > '\NUL' && c <= '\xff') s = (EPrim (PrimString (packString s)) [] r_bits_ptr_,True)
 packupString s = (toE s,False)
 
-actuallySpecializeE :: Monad m
+actuallySpecializeE :: MonadFail m
     => E   -- ^ the general expression
     -> E   -- ^ the specific type
     -> m E -- ^ the specialized value
@@ -945,7 +946,7 @@ actuallySpecializeE ge st = do
     liftM (foldl EAp ge)
           (specializeE (getType ge) st)
 
-specializeE :: Monad m
+specializeE :: MonadFail m
     => E   -- ^ the general type
     -> E   -- ^ the specific type
     -> m [E]  -- ^ what to apply the general type to to get the specific one
@@ -961,7 +962,7 @@ specializeE gt st = do
                                <$> tshow st)
     f [] gt
 
-procAllSpecs :: Monad m => DataTable -> [Type.Rule] -> [(TVr,E)] -> m ([(TVr,E)],Rules)
+procAllSpecs :: MonadFail m => DataTable -> [Type.Rule] -> [(TVr,E)] -> m ([(TVr,E)],Rules)
 procAllSpecs dataTable rs ds = do
     let specMap = Map.fromListWith (++) [ (toId n,[r]) | r@Type.RuleSpec { Type.ruleName = n } <- rs]
         f (t,e) | Just rs <- Map.lookup (tvrIdent t) specMap = do
@@ -971,7 +972,7 @@ procAllSpecs dataTable rs ds = do
     (nds,rules) <- mconcat `liftM` mapM f ds
     return $ (nds,fromRules rules)
 
-makeSpec :: Monad m => DataTable -> (TVr,E) -> T.Rule -> m ((TVr,E),Rule)
+makeSpec :: MonadFail m => DataTable -> (TVr,E) -> T.Rule -> m ((TVr,E),Rule)
 makeSpec dataTable (t,e) T.RuleSpec { T.ruleType = rt, T.ruleUniq = (m,ui), T.ruleSuper = ss } = do
     let nt = removeNewtypes dataTable $ tipe rt
     as <- specializeE (getType t) nt
@@ -1029,6 +1030,6 @@ marshallFromC ce te = do
 
 extractUnboxedTup :: E -> ([E] -> C E) -> C E
 extractUnboxedTup e f = do
-    vs <- newVars $ concat (fromTuple_ (getType e))
+    vs <- newVars $ concat ((fromTuple_ (getType e)) :: [[E]])
     a <- f (map EVar vs)
     return $ eCaseTup' e vs a
