@@ -38,7 +38,7 @@ instance GenName Int where
 freeNames :: (Ord n,GenName n) => Set.Set n -> [n]
 freeNames s  = filter (not . (`Set.member` s)) (genNames (Set.size s))
 
-instance (Monad m, Monad (t m), MonadTrans t, NameMonad n m) => NameMonad n (t m) where
+instance {-# OVERLAPPING #-} (Monad m, Monad (t m), MonadTrans t, NameMonad n m) => NameMonad n (t m) where
     addNames n = lift $ addNames n
     addBoundNames n = lift $ addBoundNames n
     newName = lift  newName
@@ -63,7 +63,7 @@ runNameMT' (NameMT x) = do
 fromNameMT :: NameMT n m a -> StateT (Set.Set n, Set.Set n) m a
 fromNameMT (NameMT x) = x
 
-instance (GenName n,Ord n,Monad m) => NameMonad n (NameMT n m) where
+instance {-# OVERLAPPING #-} (GenName n,Ord n,Monad m) => NameMonad n (NameMT n m) where
     addNames ns = NameMT $ do
         modify (\ (used,bound) -> (Set.fromList ns `Set.union` used, bound) )
     addBoundNames ns = NameMT $ do

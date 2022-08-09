@@ -891,7 +891,7 @@ instance MonadFail RM where
 instance MonadWarn RM where
     addWarning w = tell (mempty,[w])
 
-instance UniqueProducer RM where
+instance {-# OVERLAPPING #-} UniqueProducer RM where
     newUniq = do
         ScopeState u <- get
         modify (\(ScopeState s) -> ScopeState (1 + s))

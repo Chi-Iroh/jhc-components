@@ -141,6 +141,7 @@ import qualified System.IO as IO
 {-# RULES "sort/snub" forall x . sort (snub x) = snub x #-}
 {-# RULES "snub/[]" snub [] = [] #-}
 {-# RULES "snub/[x]" forall x . snub [x] = [x] #-}
+{-# INLINE[1] snub #-}
 
 -- | catch function only for IOException
 iocatch :: IO a -> (IOException -> IO a) -> IO a
@@ -348,12 +349,12 @@ repeatM_ x = sequence_ $ repeat x
 {-# RULES "replicateM/0" replicateM 0 = const (return []) #-}
 {-# RULES "replicateM_/0" replicateM_ 0 = const (return ()) #-}
 
-{-# INLINE replicateM #-}
+{-# INLINE[1] replicateM #-}
 {- SPECIALIZE replicateM :: Int -> IO a -> IO [a] #-}
 replicateM :: Monad m => Int -> m a -> m [a]
 replicateM n x = sequence $ replicate n x
 
-{-# INLINE replicateM_ #-}
+{-# INLINE[1] replicateM_ #-}
 {- SPECIALIZE replicateM_ :: Int -> IO a -> IO () #-}
 replicateM_ :: Monad m => Int -> m a -> m ()
 replicateM_ n x = sequence_ $ replicate n x

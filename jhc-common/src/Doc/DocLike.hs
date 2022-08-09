@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP,UndecidableInstances,OverlappingInstances #-}
+{-# LANGUAGE CPP,UndecidableInstances #-}
 module Doc.DocLike where
 
 #include "hs_src_config.h"
@@ -97,7 +97,7 @@ punctuate p (d:ds)  = (d <> p) : punctuate p ds
 ------------------
 -- String instance
 ------------------
-instance TextLike String where
+instance {-# OVERLAPPING #-} TextLike String where
     empty = ""
     text x = x
 
@@ -107,19 +107,19 @@ instance TextLike Char where
     text [ch] = ch
     text _ = error "TextLike: string to char"
 
-instance DocLike String where
+instance {-# OVERLAPPING #-} DocLike String where
     a <+> b = a ++ " " ++ b
 
-instance TextLike ShowS where
+instance {-# OVERLAPPING #-} TextLike ShowS where
     empty = id
     text x = (x ++)
     char c = (c:)
 
 
 
-instance DocLike ShowS
+instance {-# OVERLAPPING #-} DocLike ShowS
 
-instance Semigroup ShowS where
+instance {-# OVERLAPPING #-} Semigroup ShowS where
     a <> b = a . b
 
 instance (TextLike a, Monad m) => TextLike (m a) where

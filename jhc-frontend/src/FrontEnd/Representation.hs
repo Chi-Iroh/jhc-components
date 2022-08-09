@@ -77,7 +77,7 @@ instance TypeNames Type where
     tUnit   = TCon (Tycon tc_Unit kindStar)
     tCharzh = TCon (Tycon tc_Char_ kindHash)
 
-instance Ord (IORef a)
+-- instance Ord (IORef a)
 instance Binary (IORef a) where
   put = error "Binary.put: not impl."
   get = error "Binary.get: not impl."

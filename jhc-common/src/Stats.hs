@@ -137,7 +137,7 @@ instance Monad StatM where
     return x = StatM x mempty
     StatM x s1 >>= y = case y x of StatM z s2 -> StatM z (s1 `mappend` s2)
 
-instance Stats.MonadStats StatM where
+instance {-# OVERLAPPING #-} Stats.MonadStats StatM where
    mticks' 0 k = StatM () mempty
    mticks' n k = StatM () $ Stats.singleStat n k
    mtickStat s = StatM () s
@@ -156,7 +156,7 @@ mtick' k = mticks' 1 k
 mticks 0 _ = return ()
 mticks n k = let k' = toAtom k in k' `seq` n `seq` mticks' n k'
 
-instance MonadStats Identity where
+instance {-# OVERLAPPING #-} MonadStats Identity where
     mticks' _ _ = return ()
     mtickStat _ = return ()
 
@@ -164,11 +164,11 @@ instance MonadReader r m => MonadReader r (StatT m) where
     ask = lift $ ask
     local f (StatT m) = StatT $ local f m
 
-instance (Monad m, Monad (t m), MonadTrans t, MonadStats m) => MonadStats (t m) where
+instance {-# OVERLAPPING #-} (Monad m, Monad (t m), MonadTrans t, MonadStats m) => MonadStats (t m) where
     mticks' n k = lift $ mticks' n k
     mtickStat s = lift $ mtickStat s
 
-instance Monad m => MonadStats (StatT m) where
+instance {-# OVERLAPPING #-} Monad m => MonadStats (StatT m) where
     mticks' n k = StatT $ tell (Stat $ IB.msingleton (fromAtom k) n)
     mtickStat s =  StatT $ tell s
 
@@ -180,7 +180,7 @@ singleStat n k = Stat $ IB.msingleton (fromAtom $ toAtom k) n
 
 null (Stat r) = IB.null r
 
-instance MonadStats IO where
+instance {-# OVERLAPPING #-} MonadStats IO where
     mticks' 0 _ = return ()
     mticks' n a = do
         p <- readIORef printStats

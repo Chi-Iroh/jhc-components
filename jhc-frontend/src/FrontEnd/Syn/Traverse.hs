@@ -293,10 +293,10 @@ instance TraverseHsOps HsExp where
         f (HsWords ws)                = HsWords <$> fn ws
         --f h = error $ "FrontEnd.Syn.Traverse.traverseHsExp f unrecognized construct: " ++ show h
 
-instance TraverseHsOps e => TraverseHsOps (Located e) where
+instance {-# OVERLAPPING #-} TraverseHsOps e => TraverseHsOps (Located e) where
     traverseHsOps hops (Located l e) = withSrcSpan l (Located l <$> applyHsOps hops e)
 
-instance (TraverseHsOps a,T.Traversable f) => TraverseHsOps (f a) where
+instance {-# OVERLAPPING #-} (TraverseHsOps a,T.Traversable f) => TraverseHsOps (f a) where
     traverseHsOps hops xs = T.traverse (applyHsOps hops) xs
 
 maybeGetDeclName :: Monad m => HsDecl -> m Name

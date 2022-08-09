@@ -5,4 +5,4 @@ module System (
 
 import System.Exit
 import System.Environment
-import System.Cmd
+import System.Process

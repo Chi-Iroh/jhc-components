@@ -80,6 +80,7 @@ instance Functor (DocM s) where
 
 instance Applicative (DocM s) where
   (<*>) = ap
+  pure  = return
 
 instance Monad (DocM s) where
         (>>=) = thenDocM
@@ -114,7 +115,7 @@ dropAs (HsAsPat _ e) = e
 dropAs e = e
 
 -- Literals
-instance DL.TextLike Doc where
+instance {-# OVERLAPPING #-} DL.TextLike Doc where
     empty = return P.empty
     text = return . P.text
     char = return . P.char
@@ -152,7 +153,7 @@ equals = return P.equals
 instance Semigroup Doc where
     aM <> bM = do{a<-aM;b<-bM;return (a <> b)}
 
-instance DocLike Doc where
+instance {-# OVERLAPPING #-} DocLike Doc where
     aM <+> bM = do{a<-aM;b<-bM;return (a P.<+> b)}
     aM <$> bM = do{a<-aM;b<-bM;return (a P.$$ b)}
     hcat dl = sequence dl >>= return . P.hcat

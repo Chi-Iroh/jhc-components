@@ -1,3 +1,4 @@
+{-# LANGUAGE MonoLocalBinds #-}
 module FrontEnd.Tc.Type(
     Kind(..),
     KBase(..),

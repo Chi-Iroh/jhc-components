@@ -134,7 +134,7 @@ library
 
   default-extensions:
       BangPatterns, TypeFamilies, ViewPatterns, UndecidableInstances,
-      OverlappingInstances, RecordWildCards, RecursiveDo, TupleSections,
+      RecordWildCards, RecursiveDo, TupleSections,
       ParallelListComp, GeneralizedNewtypeDeriving, ScopedTypeVariables,
       FlexibleInstances, TypeSynonymInstances, MultiParamTypeClasses,
       DeriveDataTypeable, NoMonoLocalBinds, NamedFieldPuns,

@@ -1,3 +1,5 @@
+{-# LANGUAGE MonoLocalBinds #-}
+
 module Fixer.VMap(
     VMap(),
     Proxy(..),

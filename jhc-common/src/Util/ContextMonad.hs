@@ -1,15 +1,11 @@
 module Util.ContextMonad where
 
-import Control.Monad.Error
+import Control.Monad.Trans.Except
 import Control.Applicative
 
 class Monad m => ContextMonad m where
     type ContextOf m
     withContext :: ContextOf m -> m a -> m a
-
-instance Error [String] where
-    noMsg = []
-    strMsg s = [s]
 
 newtype ContextEither a = ContextEither (Either [String] a)
     deriving(Functor, Applicative)

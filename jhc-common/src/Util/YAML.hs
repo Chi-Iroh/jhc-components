@@ -18,13 +18,13 @@ class ToNode a where
 instance ToNode Node where
     toNode x = x
 
-instance ToNode String where
+instance {-# OVERLAPPING #-} ToNode String where
     toNode s = Leaf s
 
 instance ToNode a => ToNode [a] where
     toNode ns = List (map toNode ns)
 
-instance (MapKey k,ToNode a) => ToNode [(k,a)] where
+instance {-# OVERLAPPING #-} (MapKey k,ToNode a) => ToNode [(k,a)] where
     toNode ns = Map [ (showMapKey x,toNode y) | (x,y) <- ns ]
 
 instance (MapKey k,ToNode b) => ToNode (M.Map k b) where

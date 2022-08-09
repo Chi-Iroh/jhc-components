@@ -51,7 +51,7 @@ module FrontEnd.Tc.Monad(
     withMetaVars
     ) where
 
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
 import Data.IORef
@@ -558,7 +558,7 @@ instance MonadSrcLoc Tc where
             (Msg (Just sl) _:_) -> return sl
             _ -> return bogusASrcLoc
 
-instance UniqueProducer Tc where
+instance {-# OVERLAPPING #-} UniqueProducer Tc where
     newUniq = do
         v <- asks tcVarnum
         n <- liftIO $ do

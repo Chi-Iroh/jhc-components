@@ -7,12 +7,12 @@ import Control.Monad.State
 import Data.Unique
 import GenUtil
 
-instance UniqueProducer IO where
+instance {-# OVERLAPPING #-} UniqueProducer IO where
     newUniq = do
         u <- newUnique
         return $ hashUnique u
 
-instance Monad m =>  UniqueProducer (UniqT m) where
+instance {-# OVERLAPPING #-} Monad m =>  UniqueProducer (UniqT m) where
     newUniq = UniqT $ do
         modify (+1)
         get
@@ -37,7 +37,7 @@ execUniq st x = fst $ runUniq st x
 execUniqT :: Monad m =>  Int -> UniqT m a -> m a
 execUniqT s (UniqT sm)  = liftM fst $ runStateT sm s
 
-instance (Monad m, Monad (t m), MonadTrans t, UniqueProducer m) => UniqueProducer (t m) where
+instance {-# OVERLAPPING #-} (Monad m, Monad (t m), MonadTrans t, UniqueProducer m) => UniqueProducer (t m) where
     newUniq = lift newUniq
 
 -- | Unique integer generator monad transformer.

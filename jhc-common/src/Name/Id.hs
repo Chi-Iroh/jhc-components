@@ -185,7 +185,7 @@ runIdNameT (IdNameT x) = do
 
 fromIdNameT (IdNameT x) = x
 
-instance Monad m => NameMonad Id (IdNameT m) where
+instance {-# OVERLAPPING #-} Monad m => NameMonad Id (IdNameT m) where
     addNames ns = IdNameT $ do
         modify (\ (used,bound) -> (fromList ns `union` used, bound) )
     addBoundNames ns = IdNameT $ do
@@ -232,10 +232,10 @@ instance Show Id where
         showsPrec _ (Id 0) =  showChar '_'
         showsPrec _ (Id x) =  maybe (showString ('x':show (x `div` 2))) shows (fromId $ Id x)
 
-instance Show IdSet where
+instance {-# OVERLAPPING #-} Show IdSet where
     showsPrec n is = showsPrec n (idSetToList is)
 
-instance Show v => Show (IdMap v) where
+instance {-# OVERLAPPING #-} Show v => Show (IdMap v) where
     showsPrec n is = showsPrec n (idMapToList is)
 
 anonymousIds :: [Id]
