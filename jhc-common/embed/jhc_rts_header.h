@@ -1,3 +1,7 @@
+#ifdef __riscos__
+#define __ARM_EABI__
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <float.h>
