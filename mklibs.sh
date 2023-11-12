@@ -1,11 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-reset
-set -x
+#reset
+#set -x
 
 rm -fr "$HOME/.jhc/cache"
 
-rm ./*.hl
+rm -fr ./*.hl
+
+my_exit() {
+	echo "$1"
+	exit "$2"
+}
+
+type -P m4 > /dev/null || my_exit "this script needs m4 to run, please install m4 package." 123
+
+type -P cpphs > /dev/null || my_exit "this script needs cpphs to run, please install cpphs package." 123
 
 if [ -d dist-newstyle ]; then
     echo "dist-newstyle folder detected; assuming Haskell Cabal"
@@ -14,8 +23,8 @@ elif [ -d .stack-work ]; then
     echo ".stack-work folder detected; assuming Haskell Stack"
     run_jhc() { stack exec -- jhc "$@"; }
 else
-    echo "Neither Cabal nor Stack build folders detected. Run 'cabal v2-build jhc' or 'stack build' first."
-    exit 1
+    echo "Neither Cabal nor Stack build folders detected. Assume jhc is on the PATH."
+    run_jhc() { jhc "$@"; }
 fi
 
 run_jhc -L . --build-hl lib/jhc-prim/jhc-prim.yaml
