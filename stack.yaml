@@ -1,14 +1,10 @@
 resolver: nightly-2020-08-16
 
 packages:
+  - ./HsSyck-0.53
   - jhc-compat
   - jhc-common
   - jhc-frontend
   - jhc-core
   - jhc-grin
   - jhc-app
-
-extra-deps:
-  - HsSyck-0.53
-
-
